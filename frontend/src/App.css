@@ -36,6 +36,13 @@
   transition: 0.2s ease;
 }
 
+.auth-form button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 .role-tab,
 .mode-btn {
   background: #e2e8f0;
@@ -105,5 +112,62 @@
 
 .logout-btn:hover {
   background: #dc2626;
+}
+
+/* Loader */
+.loader {
+  border: 3px solid rgba(0, 0, 0, 0.08);
+  border-left-color: #2563eb;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* small helpers */
+.loader.small {
+  width: 12px;
+  height: 12px;
+}
+
+.loader.medium {
+  width: 20px;
+  height: 20px;
+}
+
+.loader.large {
+  width: 32px;
+  height: 32px;
+}
+
+.back-btn {
+  background: transparent;
+  border: none;
+  color: #334155;
+  font-weight: 600;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.landing-hero {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.cta-grid button {
+  border: none;
+  padding: 12px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.auth-card h1 {
+  margin-top: 0;
 }
 

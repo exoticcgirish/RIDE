@@ -1,15 +1,25 @@
-const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Rider = require("../models/Rider");
+const Driver = require("../models/Driver");
+const Admin = require("../models/Admin");
 
-const allowedRoles = ["driver", "passenger", "admin"];
+const allowedRoles = ["driver", "rider", "admin"];
+
+const findUserByEmail = async (email) => {
+  return (
+    (await Rider.findOne({ email })) ||
+    (await Driver.findOne({ email })) ||
+    (await Admin.findOne({ email }))
+  );
+};
 
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
-    const selectedRole = allowedRoles.includes(role) ? role : "passenger";
+    const selectedRole = allowedRoles.includes(role) ? role : "rider";
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await findUserByEmail(email);
 
     if (existingUser) {
       return res.status(400).json({
@@ -19,7 +29,11 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await User.create({
+    let Model = Rider;
+    if (selectedRole === "driver") Model = Driver;
+    else if (selectedRole === "admin") Model = Admin;
+
+    const user = await Model.create({
       name,
       email,
       password: hashedPassword,
@@ -38,9 +52,9 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password, role } = req.body;
-    const selectedRole = allowedRoles.includes(role) ? role : "passenger";
+    const selectedRole = allowedRoles.includes(role) ? role : "rider"; // use enums
 
-    const user = await User.findOne({ email });
+    const user = await findUserByEmail(email);
 
     if (!user) {
       return res.status(400).json({

@@ -1,97 +1,153 @@
 import { useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
-import PassengerDashboard from "./components/PassengerDashboard";
+import RiderDashboard from "./components/RiderDashboard";
+import DriverDashboard from "./components/DriverDashboard";
+import AdminDashboard from "./components/AdminDashboard";
+import Landing from "./components/Landing";
 
-const roles = ["driver", "passenger", "admin"];
+const roles = ["driver", "rider", "admin"];
 
 function App() {
-  const [activeRole, setActiveRole] = useState("passenger");
-  const [mode, setMode] = useState("login");
+  const [activeRole, setActiveRole] = useState("rider");
   const [message, setMessage] = useState("");
   const [user, setUser] = useState(null);
 
   const handleLoginSuccess = (userData) => {
-    if (userData.role === "passenger") {
+    if (userData.role === "rider") {
       setUser(userData);
       setMessage("");
-    } else {
-      setMessage("Dashboard is available only for passengers.");
+      return;
     }
+
+    if (userData.role === "driver" || userData.role === "admin") {
+      setUser(userData);
+      setMessage("");
+      return;
+    }
+
+    setMessage("Dashboard is available only for riders, drivers, or admins.");
   };
 
   const handleLogout = () => {
     setUser(null);
-    setMode("login");
-    setActiveRole("passenger");
+    setActiveRole("rider");
     setMessage("You have been logged out.");
   };
 
   return (
-    <div className='app-shell'>
-      {user ? (
-        <PassengerDashboard user={user} onLogout={handleLogout} />
-      ) : (
-        <div className='auth-card'>
-          <h1>Ride Auth</h1>
-          <p className='subtitle'>
-            Simple access for drivers, passengers, and admins.
-          </p>
+    <BrowserRouter>
+      <div className='app-shell'>
+        <Routes>
+          <Route path='/' element={<Landing />} />
 
-          <div className='role-tabs' aria-label='Choose role'>
-            {roles.map((role) => (
-              <button
-                key={role}
-                type='button'
-                className={activeRole === role ? "role-tab active" : "role-tab"}
-                onClick={() => {
-                  setActiveRole(role);
-                  setMessage("");
-                }}
-              >
-                {role.charAt(0).toUpperCase() + role.slice(1)}
-              </button>
-            ))}
-          </div>
+          <Route
+            path='/login'
+            element={
+              <div className='auth-card'>
+                <button
+                  type='button'
+                  onClick={() => window.history.back()}
+                  className='back-btn'
+                >
+                  ← Back
+                </button>
+                <h1>Ride Auth</h1>
+                <p className='subtitle'>
+                  Simple access for drivers, riders, and admins.
+                </p>
 
-          <div className='mode-switch'>
-            <button
-              type='button'
-              className={mode === "login" ? "mode-btn active" : "mode-btn"}
-              onClick={() => {
-                setMode("login");
-                setMessage("");
-              }}
-            >
-              Login
-            </button>
-            <button
-              type='button'
-              className={mode === "register" ? "mode-btn active" : "mode-btn"}
-              onClick={() => {
-                setMode("register");
-                setMessage("");
-              }}
-            >
-              Register
-            </button>
-          </div>
+                <div className='role-tabs' aria-label='Choose role'>
+                  {roles.map((r) => (
+                    <button
+                      key={r}
+                      type='button'
+                      className={
+                        activeRole === r ? "role-tab active" : "role-tab"
+                      }
+                      onClick={() => {
+                        setActiveRole(r);
+                        setMessage("");
+                      }}
+                    >
+                      {r.charAt(0).toUpperCase() + r.slice(1)}
+                    </button>
+                  ))}
+                </div>
 
-          {mode === "login" ? (
-            <LoginForm
-              role={activeRole}
-              onMessage={setMessage}
-              onLogin={handleLoginSuccess}
-            />
-          ) : (
-            <RegisterForm role={activeRole} onMessage={setMessage} />
-          )}
+                <LoginForm
+                  role={activeRole}
+                  onMessage={setMessage}
+                  onLogin={handleLoginSuccess}
+                />
+                {message ? <p className='status-message'>{message}</p> : null}
+              </div>
+            }
+          />
 
-          {message ? <p className='status-message'>{message}</p> : null}
-        </div>
-      )}
-    </div>
+          <Route
+            path='/register'
+            element={
+              <div className='auth-card'>
+                <button
+                  type='button'
+                  onClick={() => window.history.back()}
+                  className='back-btn'
+                >
+                  ← Back
+                </button>
+                <h1>Ride Auth</h1>
+                <p className='subtitle'>
+                  Simple access for drivers, riders, and admins.
+                </p>
+
+                <div className='role-tabs' aria-label='Choose role'>
+                  {roles.map((r) => (
+                    <button
+                      key={r}
+                      type='button'
+                      className={
+                        activeRole === r ? "role-tab active" : "role-tab"
+                      }
+                      onClick={() => {
+                        setActiveRole(r);
+                        setMessage("");
+                      }}
+                    >
+                      {r.charAt(0).toUpperCase() + r.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                <RegisterForm role={activeRole} onMessage={setMessage} />
+                {message ? <p className='status-message'>{message}</p> : null}
+              </div>
+            }
+          />
+
+          <Route
+            path='/dashboard'
+            element={
+              user ? (
+                user.role === "rider" ? (
+                  <RiderDashboard user={user} onLogout={handleLogout} />
+                ) : user.role === "driver" ? (
+                  <DriverDashboard user={user} onLogout={handleLogout} />
+                ) : (
+                  <AdminDashboard user={user} onLogout={handleLogout} />
+                )
+              ) : (
+                <Navigate to='/login' replace />
+              )
+            }
+          />
+
+          <Route path='*' element={<Navigate to='/' replace />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 }
 

@@ -20,7 +20,7 @@ const startServer = async () => {
         if (port === defaultPort) {
           port = defaultPort + 1;
           console.warn(
-            `Port ${defaultPort} is busy, trying port ${port} instead.`,
+            `Port ${defaultPort} is busy trying port ${port} instead.`,
           );
           startApp();
           return;

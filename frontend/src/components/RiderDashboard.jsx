@@ -1,7 +1,6 @@
-function PassengerDashboard({ user, onLogout }) {
+function RiderDashboard({ user, onLogout }) {
   return (
     <div className='dashboard'>
-      {/* Header */}
       <header className='dashboard-header'>
         <h1>RideLink</h1>
 
@@ -10,15 +9,10 @@ function PassengerDashboard({ user, onLogout }) {
           <button>👤</button>
         </div>
       </header>
-
-      {/* Welcome */}
-
       <section className='welcome-card'>
         <h2>Welcome, {user.name}</h2>
         <p>Book your next shared ride in seconds.</p>
       </section>
-
-      {/* Ride Search */}
 
       <section className='ride-search'>
         <h3>Find Shared Ride</h3>
@@ -31,17 +25,11 @@ function PassengerDashboard({ user, onLogout }) {
 
         <button>Find Ride</button>
       </section>
-
-      {/* Active Ride */}
-
       <section className='active-ride'>
         <h3>Current Ride</h3>
 
         <p>No active ride</p>
       </section>
-
-      {/* Quick Actions */}
-
       <section className='quick-grid'>
         <button>Ride History</button>
 
@@ -51,9 +39,6 @@ function PassengerDashboard({ user, onLogout }) {
 
         <button>Profile</button>
       </section>
-
-      {/* Logout */}
-
       <button className='logout-btn' onClick={onLogout}>
         Logout
       </button>
@@ -61,4 +46,4 @@ function PassengerDashboard({ user, onLogout }) {
   );
 }
 
-export default PassengerDashboard;
+export default RiderDashboard;

@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const driverSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -20,13 +20,14 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["driver", "passenger", "admin"],
-      default: "passenger",
+      enum: ["driver"],
+      default: "driver",
     },
   },
   {
     timestamps: true,
+    collection: "users",
   },
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.models.Driver || mongoose.model("Driver", driverSchema);
