@@ -1,6 +1,9 @@
 const RideRequest = require("../models/RideRequest.js");
 const dbFallback = require("../dbFallback.js");
 
+/**
+ * Create Ride Request
+ */
 const createRideRequest = async (riderId, data) => {
   if (dbFallback.isEnabled()) {
     return dbFallback.createRideRequest(riderId, data);
@@ -18,9 +21,13 @@ const createRideRequest = async (riderId, data) => {
     notes: data.notes || "",
   });
 
+  console.log("Saved Ride:", rideRequest);
   return rideRequest;
 };
 
+/**
+ * Get My Ride Requests
+ */
 const getMyRideRequests = async (riderId) => {
   if (dbFallback.isEnabled()) {
     return dbFallback.getRideRequestsByRider(riderId);
@@ -40,69 +47,77 @@ const getRideRequestById = async (id) => {
   }
 
   return await RideRequest.findById(id)
-    .populate("rider")
-    .populate("assignedDriver")
+    .populate("rider", "name full_name email phone college")
+    .populate("assignedDriver", "name full_name phone")
     .populate("trip");
 };
 
 /**
- * Update Ride Request
+ * Update Ride Request (Includes rider verification)
  */
-const updateRideRequest = async (id, data) => {
+const updateRideRequest = async (id, data, riderId = null) => {
   if (dbFallback.isEnabled()) {
     return dbFallback.updateRideRequest(id, data);
   }
 
-  return await RideRequest.findByIdAndUpdate(
-    id,
-    {
-      $set: data,
-    },
-    {
-      new: true,
-      runValidators: true,
-    },
+  const query = { _id: id };
+  if (riderId) query.rider = riderId; // Ensure ownership if riderId is provided
+
+  return await RideRequest.findOneAndUpdate(
+    query,
+    { $set: data },
+    { new: true, runValidators: true },
   );
 };
 
 /**
- * Cancel Ride Request
+ * Cancel Ride Request (Includes rider verification)
  */
-const cancelRideRequest = async (id) => {
+const cancelRideRequest = async (id, riderId = null) => {
   if (dbFallback.isEnabled()) {
     return dbFallback.cancelRideRequest(id);
   }
 
-  return await RideRequest.findByIdAndUpdate(
-    id,
-    {
-      status: "cancelled",
-    },
-    {
-      new: true,
-    },
+  const query = { _id: id };
+  if (riderId) query.rider = riderId;
+
+  return await RideRequest.findOneAndUpdate(
+    query,
+    { status: "cancelled" },
+    { new: true },
   );
 };
 
 /**
- * Delete Ride Request
+ * Delete Ride Request (Includes rider verification)
  */
-const deleteRideRequest = async (id) => {
+const deleteRideRequest = async (id, riderId = null) => {
   if (dbFallback.isEnabled()) {
     return dbFallback.deleteRideRequest(id);
   }
 
-  return await RideRequest.findByIdAndDelete(id);
+  const query = { _id: id };
+  if (riderId) query.rider = riderId;
+
+  return await RideRequest.findOneAndDelete(query);
 };
 
 /**
- * Driver Search Ride Requests
+ * Driver Search Ride Requests (With full-day date range matching)
  */
 const searchRideRequests = async (
   pickupLocation,
   destination,
   departureDate,
 ) => {
+  if (dbFallback.isEnabled()) {
+    return dbFallback.searchRideRequests({
+      pickupLocation,
+      destination,
+      departureDate,
+    });
+  }
+
   const query = {
     status: "waiting",
   };
@@ -122,26 +137,27 @@ const searchRideRequests = async (
   }
 
   if (departureDate) {
-    query.departureDate = new Date(departureDate);
-  }
+    const startOfDay = new Date(departureDate);
+    startOfDay.setHours(0, 0, 0, 0);
 
-  if (dbFallback.isEnabled()) {
-    return dbFallback.searchRideRequests({
-      pickupLocation,
-      destination,
-      departureDate,
-    });
+    const endOfDay = new Date(departureDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    query.departureDate = {
+      $gte: startOfDay,
+      $lte: endOfDay,
+    };
   }
 
   return await RideRequest.find(query)
-    .populate("rider", "full_name phone")
+    .populate("rider", "name full_name phone")
     .sort({ departureDate: 1, departureTime: 1 });
 };
 
 /**
- * Assign Driver
+ * Assign Driver / Accept Ride
  */
-const assignDriver = async (rideRequestId, driverId, tripId) => {
+const assignDriver = async (rideRequestId, driverId, tripId = null) => {
   if (dbFallback.isEnabled()) {
     return dbFallback.assignDriver(rideRequestId, driverId, tripId);
   }
@@ -150,12 +166,10 @@ const assignDriver = async (rideRequestId, driverId, tripId) => {
     rideRequestId,
     {
       assignedDriver: driverId,
-      trip: tripId,
+      ...(tripId && { trip: tripId }),
       status: "accepted",
     },
-    {
-      new: true,
-    },
+    { new: true },
   );
 };
 
@@ -168,4 +182,5 @@ module.exports = {
   deleteRideRequest,
   searchRideRequests,
   assignDriver,
+  acceptRideRequest: assignDriver, // Exported alias for controller usage
 };

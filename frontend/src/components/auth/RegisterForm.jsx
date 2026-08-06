@@ -5,30 +5,55 @@ import { register } from "../../services/authApi";
 
 function RegisterForm({ role, onMessage }) {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+
+  const [full_name, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Driver Fields
+  const [phone, setPhone] = useState("");
+  const [vehicleType, setVehicleType] = useState("");
+  const [vehicleNumber, setVehicleNumber] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
     setLoading(true);
     onMessage("");
 
     try {
-      const { data } = await register({ name, email, password, role });
+      const payload = {
+        full_name,
+        email,
+        password,
+        role,
+      };
 
-      onMessage(
-        `${role.charAt(0).toUpperCase() + role.slice(1)} account created successfully.`,
-      );
-      setName("");
+      if (role === "driver") {
+        payload.phone = phone;
+        payload.vehicleType = vehicleType;
+        payload.vehicleNumber = vehicleNumber;
+        payload.licenseNumber = licenseNumber;
+      }
+
+      await register(payload);
+
+      onMessage("Account created successfully.");
+
+      setFullName("");
       setEmail("");
       setPassword("");
-      navigate("/login", { replace: true });
-    } catch (error) {
-      onMessage(
-        error.response?.data?.message || error.message || "Registration failed",
-      );
+      setPhone("");
+      setVehicleType("");
+      setVehicleNumber("");
+      setLicenseNumber("");
+
+      navigate("/login");
+    } catch (err) {
+      onMessage(err.response?.data?.message || "Registration failed.");
     } finally {
       setLoading(false);
     }
@@ -42,7 +67,8 @@ function RegisterForm({ role, onMessage }) {
       >
         <div className='text-center mb-8'>
           <h1 className='text-4xl font-extrabold'>
-            Ride<span className='text-yellow-500'>Link</span>
+            Ride
+            <span className='text-yellow-500'>Link</span>
           </h1>
 
           <p className='text-gray-500 mt-2'>
@@ -50,51 +76,113 @@ function RegisterForm({ role, onMessage }) {
           </p>
         </div>
 
-        <div className='mb-6'>
-          <p className='text-sm text-gray-500'>
-            Registering a new{" "}
-            <span className='font-semibold text-gray-900'>{role}</span> account.
-          </p>
-        </div>
+        <p className='text-sm text-gray-500 mb-6'>
+          Registering as
+          <span className='font-semibold'> {role}</span>
+        </p>
+
+        {/* Full Name */}
 
         <div className='mb-4'>
           <label className='font-medium'>Full Name</label>
 
           <input
             type='text'
+            value={full_name}
+            onChange={(e) => setFullName(e.target.value)}
+            className='w-full mt-2 p-3 rounded-xl border border-gray-300'
             placeholder='Enter full name'
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className='w-full mt-2 p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-yellow-400 outline-none'
             required
           />
         </div>
+
+        {/* Email */}
 
         <div className='mb-4'>
           <label className='font-medium'>Email</label>
 
           <input
             type='email'
-            placeholder='Enter email'
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className='w-full mt-2 p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-yellow-400 outline-none'
+            className='w-full mt-2 p-3 rounded-xl border border-gray-300'
+            placeholder='Enter email'
             required
           />
         </div>
+
+        {/* Password */}
 
         <div className='mb-4'>
           <label className='font-medium'>Password</label>
 
           <input
             type='password'
-            placeholder='Create password'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className='w-full mt-2 p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-yellow-400 outline-none'
+            className='w-full mt-2 p-3 rounded-xl border border-gray-300'
+            placeholder='Password'
             required
           />
         </div>
+
+        {/* Driver Only */}
+
+        {role === "driver" && (
+          <>
+            <div className='mb-4'>
+              <label className='font-medium'>Phone Number</label>
+
+              <input
+                type='text'
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className='w-full mt-2 p-3 rounded-xl border border-gray-300'
+                placeholder='Phone Number'
+                required
+              />
+            </div>
+
+            <div className='mb-4'>
+              <label className='font-medium'>Vehicle Type</label>
+
+              <input
+                type='text'
+                value={vehicleType}
+                onChange={(e) => setVehicleType(e.target.value)}
+                className='w-full mt-2 p-3 rounded-xl border border-gray-300'
+                placeholder='Car / Bike / SUV'
+                required
+              />
+            </div>
+
+            <div className='mb-4'>
+              <label className='font-medium'>Vehicle Number</label>
+
+              <input
+                type='text'
+                value={vehicleNumber}
+                onChange={(e) => setVehicleNumber(e.target.value)}
+                className='w-full mt-2 p-3 rounded-xl border border-gray-300'
+                placeholder='UP16AB1234'
+                required
+              />
+            </div>
+
+            <div className='mb-4'>
+              <label className='font-medium'>Driving License</label>
+
+              <input
+                type='text'
+                value={licenseNumber}
+                onChange={(e) => setLicenseNumber(e.target.value)}
+                className='w-full mt-2 p-3 rounded-xl border border-gray-300'
+                placeholder='DLXXXXXXXXXX'
+                required
+              />
+            </div>
+          </>
+        )}
 
         <label className='flex items-center gap-2 text-sm text-gray-600 mb-6'>
           <input type='checkbox' required />I agree to the Terms & Conditions
@@ -105,19 +193,15 @@ function RegisterForm({ role, onMessage }) {
           disabled={loading}
           className='w-full bg-yellow-400 hover:bg-yellow-500 transition py-3 rounded-xl font-semibold shadow-lg'
         >
-          {loading ? (
-            <Loader size='sm' ariaLabel='Creating account' />
-          ) : (
-            "Create Account"
-          )}
+          {loading ? <Loader /> : "Create Account"}
         </button>
 
-        <p className='text-center text-gray-500 mt-6'>
+        <p className='text-center mt-6 text-gray-500'>
           Already have an account?
           <button
             type='button'
             onClick={() => navigate("/login")}
-            className='text-yellow-600 font-semibold ml-1'
+            className='ml-1 text-yellow-500 font-semibold'
           >
             Login
           </button>
@@ -126,4 +210,5 @@ function RegisterForm({ role, onMessage }) {
     </div>
   );
 }
+
 export default RegisterForm;

@@ -51,7 +51,11 @@ exports.create = async (req, res) => {
  */
 exports.getMine = async (req, res) => {
   try {
+    console.log("Logged User:", req.user);
+
     const requests = await getMyRideRequests(req.user.id);
+
+    console.log("Ride Requests:", requests);
 
     return res.status(200).json({
       success: true,
@@ -59,6 +63,8 @@ exports.getMine = async (req, res) => {
       data: requests,
     });
   } catch (err) {
+    console.error("Get Ride Requests Error:", err);
+
     return res.status(500).json({
       success: false,
       message: err.message,

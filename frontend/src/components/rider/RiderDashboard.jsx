@@ -212,7 +212,7 @@ function RiderDashboard({ user, onLogout }) {
             disabled={loading}
             className='mt-6 w-full bg-yellow-400 hover:bg-yellow-500 py-4 rounded-2xl text-lg font-semibold transition'
           >
-            {loading ? "Creating Ride..." : "🚗 Request Ride"}
+            {loading ? "Creating Ride..." : "Request Ride"}
           </button>
         </motion.div>
 

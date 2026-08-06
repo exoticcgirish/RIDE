@@ -1,33 +1,62 @@
 const userService = require("../services/user.service");
+const User = require("../modules/user/user.model");
 
 exports.getProfile = async (req, res) => {
   try {
     const rider = await userService.getProfile(req.user.id);
 
-    res.json({
+    return res.json({
       success: true,
-      rider,
+      user: rider,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
-
 exports.updateProfile = async (req, res) => {
   try {
-    const rider = await userService.updateProfile(req.user.id, req.body);
+    const { fullName, phone, college, gender, emergencyContact, profileImage } =
+      req.body;
 
-    res.json({
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        $set: {
+          fullName,
+          phone,
+          college,
+          gender,
+          emergencyContact,
+          profileImage,
+        },
+      },
+      {
+        new: true, // Return updated document
+        runValidators: true,
+      },
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
       success: true,
-      rider,
+      message: "Profile updated successfully",
+      user: updatedUser,
     });
-  } catch (error) {
-    res.status(500).json({
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message: err.message,
     });
   }
 };

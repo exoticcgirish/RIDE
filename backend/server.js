@@ -4,6 +4,11 @@ const dbFallback = require("./src/dbFallback");
 
 dotenv.config();
 
+// Disable console logs
+console.log = () => {};
+console.info = () => {};
+console.warn = () => {};
+
 const app = require("./src/app");
 
 const startServer = async () => {

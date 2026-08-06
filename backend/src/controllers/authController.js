@@ -33,7 +33,18 @@ const sanitizeUser = (user) => {
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const {
+      full_name,
+      email,
+      password,
+      role,
+
+      phone,
+      vehicleType,
+      vehicleNumber,
+      licenseNumber,
+    } = req.body;
+
     const selectedRole = allowedRoles.includes(role) ? role : "rider";
 
     const existingUser = await findUserByEmail(email);
@@ -50,30 +61,50 @@ exports.register = async (req, res) => {
 
     if (dbFallback.isEnabled()) {
       user = await dbFallback.createUser({
-        name,
+        full_name,
         email,
         password: hashedPassword,
         role: selectedRole,
+        phone,
+        vehicleType,
+        vehicleNumber,
+        licenseNumber,
       });
     } else {
       let Model = Rider;
-      if (selectedRole === "driver") Model = Driver;
-      else if (selectedRole === "admin") Model = Admin;
 
-      user = await Model.create({
-        name,
+      if (selectedRole === "driver") {
+        Model = Driver;
+      } else if (selectedRole === "admin") {
+        Model = Admin;
+      }
+
+      const data = {
+        full_name,
         email,
         password: hashedPassword,
         role: selectedRole,
-      });
+      };
+
+      if (selectedRole === "driver") {
+        data.phone = phone;
+        data.vehicleType = vehicleType;
+        data.vehicleNumber = vehicleNumber;
+        data.licenseNumber = licenseNumber;
+      }
+
+      user = await Model.create(data);
     }
 
     res.status(201).json({
+      success: true,
       message: `${selectedRole} registered successfully`,
-      user,
+      user: sanitizeUser(user),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
@@ -111,8 +142,18 @@ exports.login = async (req, res) => {
     );
 
     res.json({
+      success: true,
       token,
-      user: sanitizeUser(user),
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone,
+        college: user.college,
+        gender: user.gender,
+        emergencyContact: user.emergencyContact,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -21,7 +21,11 @@ const roles = ["driver", "rider", "admin"];
 function App() {
   const [activeRole, setActiveRole] = useState("rider");
   const [message, setMessage] = useState("");
-  const [user, setUser] = useState(null);
+  // const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -186,7 +190,12 @@ function App() {
             element={
               user ? (
                 user.role === "rider" ? (
-                  <EditProfile user={user} />
+                  <EditProfile
+                    user={user}
+                    onUpdateProfile={(updatedUser) => {
+                      setUser(updatedUser);
+                    }}
+                  />
                 ) : (
                   <Navigate to='/' replace />
                 )

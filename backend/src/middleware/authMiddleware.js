@@ -3,7 +3,7 @@ const dbFallback = require("../dbFallback");
 
 module.exports = (req, res, next) => {
   const token = req.header("Authorization");
-  console.log("[auth] Authorization header:", token);
+  // console.log("[auth] Authorization header:", token);
 
   // Development fallback: when dbFallback is enabled allow requests without a token
   if (!token) {
