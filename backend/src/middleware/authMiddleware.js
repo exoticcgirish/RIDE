@@ -1,9 +1,18 @@
 const jwt = require("jsonwebtoken");
+const dbFallback = require("../dbFallback");
 
 module.exports = (req, res, next) => {
   const token = req.header("Authorization");
+  console.log("[auth] Authorization header:", token);
 
+  // Development fallback: when dbFallback is enabled allow requests without a token
   if (!token) {
+    if (dbFallback.isEnabled()) {
+      console.log("[auth] dbFallback enabled — attaching dev user to request");
+      req.user = { id: "__dev_rider__", role: "rider" };
+      return next();
+    }
+
     return res.status(401).json({
       message: "Access denied",
     });
@@ -18,6 +27,7 @@ module.exports = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
+    console.log("[auth] token verify error:", error && error.message);
     res.status(401).json({
       message: "Invalid token",
     });

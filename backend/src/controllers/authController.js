@@ -3,15 +3,32 @@ const jwt = require("jsonwebtoken");
 const Rider = require("../models/Rider");
 const Driver = require("../models/Driver");
 const Admin = require("../models/Admin");
+const dbFallback = require("../dbFallback");
 
 const allowedRoles = ["driver", "rider", "admin"];
 
 const findUserByEmail = async (email) => {
+  if (dbFallback.isEnabled()) {
+    return dbFallback.findUserByEmail(email);
+  }
+
   return (
-    (await Rider.findOne({ email })) ||
-    (await Driver.findOne({ email })) ||
-    (await Admin.findOne({ email }))
+    (await Rider.findOne({ email }).select("+password")) ||
+    (await Driver.findOne({ email }).select("+password")) ||
+    (await Admin.findOne({ email }).select("+password"))
   );
+};
+
+const sanitizeUser = (user) => {
+  if (!user) return null;
+
+  const safeUser = {
+    ...((typeof user.toObject === "function" && user.toObject()) || user),
+    ...(user._doc || {}),
+  };
+
+  delete safeUser.password;
+  return safeUser;
 };
 
 exports.register = async (req, res) => {
@@ -29,16 +46,27 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    let Model = Rider;
-    if (selectedRole === "driver") Model = Driver;
-    else if (selectedRole === "admin") Model = Admin;
+    let user;
 
-    const user = await Model.create({
-      name,
-      email,
-      password: hashedPassword,
-      role: selectedRole,
-    });
+    if (dbFallback.isEnabled()) {
+      user = await dbFallback.createUser({
+        name,
+        email,
+        password: hashedPassword,
+        role: selectedRole,
+      });
+    } else {
+      let Model = Rider;
+      if (selectedRole === "driver") Model = Driver;
+      else if (selectedRole === "admin") Model = Admin;
+
+      user = await Model.create({
+        name,
+        email,
+        password: hashedPassword,
+        role: selectedRole,
+      });
+    }
 
     res.status(201).json({
       message: `${selectedRole} registered successfully`,
@@ -84,7 +112,7 @@ exports.login = async (req, res) => {
 
     res.json({
       token,
-      user,
+      user: sanitizeUser(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
