@@ -5,59 +5,93 @@ const compression = require("compression");
 
 const app = express();
 
+// ======================================================
+// SECURITY & PERFORMANCE
+// ======================================================
+
 app.use(helmet());
 app.use(compression());
 
-const allowedOrigins = (
-  process.env.ALLOWED_ORIGINS || "http://localhost:5173,http://127.0.0.1:5173"
-)
-  .split(",")
-  .map((origin) => origin.trim());
+// ======================================================
+// CORS
+// ======================================================
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error(`CORS policy violation: ${origin} not allowed`));
-  },
+  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  optionsSuccessStatus: 204,
 };
 
-// Mount CORS middleware globally (handles both normal requests and OPTIONS preflights)
 app.use(cors(corsOptions));
+
+// ======================================================
+// BODY PARSERS
+// ======================================================
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// API Routes
+// ======================================================
+// API ROUTES
+// ======================================================
+
+// Authentication
 app.use("/api/auth", require("./routes/authRoutes"));
+
+// Users
 app.use("/api/users", require("./routes/user.routes"));
+
+// Protected routes
 app.use("/api/protected", require("./routes/protectedRoutes"));
+
+// Ride requests
 app.use("/api/ride-requests", require("./routes/rideRequest.routes"));
+
+// Admin
 app.use("/api/admin", require("./routes/admin.routes"));
+
+// Drivers
 app.use("/api/drivers", require("./routes/driver.routes"));
 
-// 404 Handler (using Express 5 compatible route pattern)
+// ======================================================
+// 404 HANDLER
+// ======================================================
+
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: "Route not found" });
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.originalUrl,
+  });
 });
 
-// Centralized Error Handler
+// ======================================================
+// GLOBAL ERROR HANDLER
+// ======================================================
+
 app.use((err, req, res, next) => {
-  if (err.message && err.message.includes("CORS policy violation")) {
-    return res.status(403).json({ success: false, message: err.message });
-  }
+  console.error("=================================");
+  console.error("[ERROR]");
+  console.error("Message:", err.message);
+  console.error("Stack:", err.stack);
+  console.error("=================================");
 
   const statusCode = err.statusCode || 500;
+
   res.status(statusCode).json({
     success: false,
     message: err.message || "Internal Server Error",
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+
+    ...(process.env.NODE_ENV === "development" && {
+      stack: err.stack,
+    }),
   });
 });
+
+// ======================================================
+// EXPORT APP
+// ======================================================
 
 module.exports = app;
