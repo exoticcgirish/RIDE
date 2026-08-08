@@ -27,6 +27,7 @@ function RideRequestCard({ request, onEdit, onCancel, onDelete }) {
       transition={{ duration: 0.25 }}
       className='rounded-3xl bg-white/90 backdrop-blur-xl shadow-xl border border-gray-100 p-6'
     >
+      
       {/* Header */}
       <div className='flex justify-between items-start gap-4'>
         <div>

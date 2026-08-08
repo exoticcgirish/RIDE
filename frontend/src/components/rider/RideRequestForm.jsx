@@ -263,7 +263,7 @@ function RideRequestForm() {
                 Creating Ride...
               </span>
             ) : (
-              "🚗 Request Ride"
+              "Request Ride"
             )}
           </motion.button>
         </form>

@@ -12,6 +12,7 @@ const ProfileCard = ({ user }) => {
       .slice(0, 2);
   };
 
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -19,11 +20,11 @@ const ProfileCard = ({ user }) => {
       transition={{ duration: 0.3 }}
       className='bg-white rounded-3xl shadow-lg hover:shadow-xl transition p-8 max-w-xl mx-auto border border-gray-100'
     >
-      {/* Header / Avatar Section */}
       <div className='flex items-center gap-5 pb-6 border-b border-gray-100'>
         <div className='w-20 h-20 rounded-full bg-yellow-400 text-gray-900 font-bold text-2xl flex items-center justify-center shadow-md shrink-0'>
           {getInitials(user?.name)}
         </div>
+
         <div>
           <div className='flex items-center gap-2'>
             <h2 className='text-2xl font-bold text-gray-900'>
@@ -37,9 +38,7 @@ const ProfileCard = ({ user }) => {
         </div>
       </div>
 
-      {/* Details Grid */}
       <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-6'>
-        {/* Full Name */}
         <div className='bg-gray-50 rounded-2xl p-4 flex items-center gap-4'>
           <div className='w-10 h-10 rounded-xl bg-yellow-100 text-yellow-700 flex items-center justify-center shrink-0'>
             <User size={20} />

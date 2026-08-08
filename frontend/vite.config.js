@@ -9,7 +9,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
+      devOptions: {
+        enabled: true,
+      },
+      includeAssets: ["favicon.svg", "apple-touch-icon.png", "mask-icon.svg"],
       manifest: {
         name: "RideLink",
         short_name: "RideLink",
@@ -20,14 +23,32 @@ export default defineConfig({
         start_url: "/",
         icons: [
           {
-            src: "/icon-192.png",
+            src: "/pwa-192x192.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any",
           },
           {
-            src: "/icon-512.png",
+            src: "/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "maskable",
+          },
+        ],
+        screenshots: [
+          {
+            src: "/desktop-screenshot.png",
+            sizes: "2938x1666",
+            type: "image/png",
+            form_factor: "wide",
+            label: "RideLink Desktop Dashboard",
+          },
+          {
+            src: "/mobile-screenshot.png",
+            sizes: "682x1498",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "RideLink Mobile Dashboard",
           },
         ],
       },

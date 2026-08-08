@@ -1,5 +1,28 @@
 import { useEffect, useState } from "react";
-import { Users, CheckCircle, Clock, XCircle } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  Users,
+  CheckCircle,
+  Clock,
+  XCircle,
+  LayoutDashboard,
+  UserCheck,
+  UserX,
+  GraduationCap,
+  Car,
+  BarChart3,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  ShieldCheck,
+  Phone,
+  Mail,
+  CreditCard,
+  RefreshCw,
+  Check,
+  Ban,
+} from "lucide-react";
 
 import {
   getDashboardStats,
@@ -9,48 +32,9 @@ import {
 } from "../../services/adminApi";
 
 function AdminDashboard({ onLogout }) {
-  const menu = [
-    {
-      title: "Dashboard",
-      icon: "📊",
-      path: "/admin/dashboard",
-    },
-    {
-      title: "Pending Drivers",
-      icon: "⏳",
-      path: "/admin/pending-drivers",
-    },
-    {
-      title: "Approved Drivers",
-      icon: "✅",
-      path: "/admin/approved-drivers",
-    },
-    {
-      title: "Rejected Drivers",
-      icon: "❌",
-      path: "/admin/rejected-drivers",
-    },
-    {
-      title: "Riders",
-      icon: "👨‍🎓",
-      path: "/admin/riders",
-    },
-    {
-      title: "Trips",
-      icon: "🚕",
-      path: "/admin/trips",
-    },
-    {
-      title: "Reports",
-      icon: "📈",
-      path: "/admin/reports",
-    },
-    {
-      title: "Settings",
-      icon: "⚙️",
-      path: "/admin/settings",
-    },
-  ];
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -60,18 +44,80 @@ function AdminDashboard({ onLogout }) {
 
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState("");
+  const [error, setError] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const menu = [
+    {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      path: "/admin/dashboard",
+    },
+    {
+      title: "Pending Drivers",
+      icon: Clock,
+      path: "/admin/pending-drivers",
+    },
+    {
+      title: "Approved Drivers",
+      icon: UserCheck,
+      path: "/admin/approved-drivers",
+    },
+    {
+      title: "Rejected Drivers",
+      icon: UserX,
+      path: "/admin/rejected-drivers",
+    },
+    {
+      title: "Riders",
+      icon: GraduationCap,
+      path: "/admin/riders",
+    },
+    {
+      title: "Trips",
+      icon: Car,
+      path: "/admin/trips",
+    },
+    {
+      title: "Reports",
+      icon: BarChart3,
+      path: "/admin/reports",
+    },
+    {
+      title: "Settings",
+      icon: Settings,
+      path: "/admin/settings",
+    },
+  ];
 
   const loadDashboard = async () => {
     try {
       setLoading(true);
+      setError("");
 
-      const statsRes = await getDashboardStats();
-      const pendingRes = await getPendingDrivers();
+      const [statsRes, pendingRes] = await Promise.all([
+        getDashboardStats(),
+        getPendingDrivers(),
+      ]);
 
-      setStats(statsRes.data.data);
-      setDrivers(pendingRes.data.data || []);
+      setStats(
+        statsRes?.data?.data || {
+          total: 0,
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+        },
+      );
+
+      setDrivers(pendingRes?.data?.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Admin dashboard error:", err);
+
+      setError(
+        err.response?.data?.message ||
+          "Unable to load admin dashboard. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -80,139 +126,593 @@ function AdminDashboard({ onLogout }) {
   useEffect(() => {
     loadDashboard();
   }, []);
-
   const handleApprove = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to approve this driver?",
+    );
+
+    if (!confirmed) return;
+
     try {
+      setActionLoading(id);
+      setError("");
+
       await approveDriver(id);
-      loadDashboard();
+
+      await loadDashboard();
     } catch (err) {
-      console.error(err);
+      console.error("Approve driver error:", err);
+
+      setError(err.response?.data?.message || "Failed to approve driver.");
+    } finally {
+      setActionLoading("");
     }
   };
 
-  const handleReject = async (id) => {
-    const reason = prompt("Reason for rejection");
+  // --------------------------------------------------
+  // Reject Driver
+  // --------------------------------------------------
 
-    if (!reason) return;
+  const handleReject = async (id) => {
+    const reason = window.prompt("Enter rejection reason:");
+
+    if (!reason || !reason.trim()) {
+      return;
+    }
 
     try {
-      await rejectDriver(id, reason);
-      loadDashboard();
+      setActionLoading(id);
+      setError("");
+
+      await rejectDriver(id, reason.trim());
+
+      await loadDashboard();
     } catch (err) {
-      console.error(err);
+      console.error("Reject driver error:", err);
+
+      setError(err.response?.data?.message || "Failed to reject driver.");
+    } finally {
+      setActionLoading("");
     }
+  };
+
+  // --------------------------------------------------
+  // Logout
+  // --------------------------------------------------
+
+  const handleLogout = () => {
+    setMobileMenuOpen(false);
+
+    if (onLogout) {
+      onLogout();
+    }
+  };
+
+  // --------------------------------------------------
+  // Navigation Click
+  // --------------------------------------------------
+
+  const handleNavigation = (path) => {
+    navigate(path);
+    setMobileMenuOpen(false);
+  };
+
+  // --------------------------------------------------
+  // Driver Name
+  // --------------------------------------------------
+
+  const getDriverName = (driver) => {
+    return (
+      driver?.full_name || driver?.name || driver?.fullName || "Unknown Driver"
+    );
+  };
+
+  // --------------------------------------------------
+  // Vehicle Type
+  // --------------------------------------------------
+
+  const getVehicleType = (driver) => {
+    return (
+      driver?.vehicleType ||
+      driver?.vehicleName ||
+      driver?.vehicle ||
+      "Not provided"
+    );
+  };
+
+  // --------------------------------------------------
+  // Vehicle Number
+  // --------------------------------------------------
+
+  const getVehicleNumber = (driver) => {
+    return driver?.vehicleNumber || "Not provided";
+  };
+
+  // --------------------------------------------------
+  // Active menu
+  // --------------------------------------------------
+
+  const isActive = (path) => {
+    return location.pathname === path;
   };
 
   return (
     <div className='min-h-screen bg-gray-100'>
-      {/* Header */}
+      {/* ==================================================
+          MOBILE HEADER
+      ================================================== */}
 
-      <div className='bg-black text-white p-6 flex justify-between items-center'>
-        <div>
-          <h1 className='text-3xl font-bold'>Admin Dashboard</h1>
+      <div className='lg:hidden sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm'>
+        <div className='flex items-center justify-between px-5 py-4'>
+          <div>
+            <h1 className='text-2xl font-extrabold text-gray-900'>
+              Ride<span className='text-yellow-500'>Link</span>
+            </h1>
 
-          <p className='text-gray-400'>Manage Driver Approvals</p>
+            <p className='text-xs text-gray-500'>Admin Panel</p>
+          </div>
+
+          <button
+            type='button'
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className='w-11 h-11 rounded-xl bg-yellow-400 flex items-center justify-center hover:bg-yellow-500 transition'
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
 
-        <button onClick={onLogout} className='bg-red-500 px-5 py-2 rounded-lg'>
-          Logout
-        </button>
-      </div>
+        {mobileMenuOpen && (
+          <div className='border-t border-gray-100 bg-white px-4 py-4'>
+            <div className='space-y-2'>
+              {menu.map((item) => {
+                const Icon = item.icon;
 
-      {/* Stats */}
+                return (
+                  <button
+                    key={item.path}
+                    type='button'
+                    onClick={() => handleNavigation(item.path)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition ${
+                      isActive(item.path)
+                        ? "bg-yellow-400 text-gray-900 font-semibold"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Icon size={19} />
 
-      <div className='grid md:grid-cols-4 gap-5 p-6'>
-        <StatCard
-          title='Total Drivers'
-          value={stats.total}
-          icon={<Users size={28} />}
-        />
+                    <span>{item.title}</span>
+                  </button>
+                );
+              })}
 
-        <StatCard
-          title='Pending'
-          value={stats.pending}
-          icon={<Clock size={28} />}
-        />
-
-        <StatCard
-          title='Approved'
-          value={stats.approved}
-          icon={<CheckCircle size={28} />}
-        />
-
-        <StatCard
-          title='Rejected'
-          value={stats.rejected}
-          icon={<XCircle size={28} />}
-        />
-      </div>
-
-      {/* Pending Drivers */}
-
-      <div className='p-6'>
-        <h2 className='text-2xl font-bold mb-5'>Pending Driver Requests</h2>
-
-        {loading ? (
-          <p>Loading...</p>
-        ) : drivers.length === 0 ? (
-          <div className='bg-white p-8 rounded-xl shadow'>
-            No pending drivers.
-          </div>
-        ) : (
-          <div className='space-y-5'>
-            {drivers.map((driver) => (
-              <div
-                key={driver._id}
-                className='bg-white rounded-xl shadow p-6 flex justify-between items-center'
+              <button
+                type='button'
+                onClick={handleLogout}
+                className='w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-red-600 hover:bg-red-50 transition'
               >
-                <div>
-                  <h3 className='text-xl font-bold'>{driver.full_name}</h3>
+                <LogOut size={19} />
 
-                  <p>{driver.email}</p>
-
-                  <p>{driver.phone}</p>
-
-                  <p>Vehicle : {driver.vehicleName}</p>
-
-                  <p>Vehicle No : {driver.vehicleNumber}</p>
-                </div>
-
-                <div className='space-x-3'>
-                  <button
-                    onClick={() => handleApprove(driver._id)}
-                    className='bg-green-500 text-white px-5 py-2 rounded-lg'
-                  >
-                    Approve
-                  </button>
-
-                  <button
-                    onClick={() => handleReject(driver._id)}
-                    className='bg-red-500 text-white px-5 py-2 rounded-lg'
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            ))}
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
         )}
+      </div>
+
+      {/* ==================================================
+          DESKTOP SIDEBAR
+      ================================================== */}
+
+      <aside className='hidden lg:flex fixed left-0 top-0 bottom-0 w-72 bg-white border-r border-gray-200 flex-col z-40'>
+        {/* Logo */}
+
+        <div className='px-7 py-7 border-b border-gray-100'>
+          <h1 className='text-3xl font-extrabold text-gray-900'>
+            Ride<span className='text-yellow-500'>Link</span>
+          </h1>
+
+          <p className='text-sm text-gray-500 mt-1'>Administration Panel</p>
+        </div>
+
+        {/* Navigation */}
+
+        <nav className='flex-1 p-5 space-y-2 overflow-y-auto'>
+          {menu.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.path}
+                type='button'
+                onClick={() => handleNavigation(item.path)}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition text-left ${
+                  isActive(item.path)
+                    ? "bg-yellow-400 text-gray-900 font-bold shadow-sm"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Icon size={20} />
+
+                <span>{item.title}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Logout */}
+
+        <div className='p-5 border-t border-gray-100'>
+          <button
+            type='button'
+            onClick={handleLogout}
+            className='w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-red-600 hover:bg-red-50 transition font-semibold'
+          >
+            <LogOut size={20} />
+
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ==================================================
+          MAIN CONTENT
+      ================================================== */}
+
+      <main className='lg:ml-72'>
+        <div className='max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-6 sm:py-8'>
+          {/* ==================================================
+              PAGE HEADER
+          ================================================== */}
+
+          <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-8'>
+            <div>
+              <p className='text-yellow-500 font-bold uppercase tracking-wider text-sm'>
+                Administration
+              </p>
+
+              <h1 className='text-3xl sm:text-4xl font-extrabold text-gray-900 mt-1'>
+                Admin Dashboard
+              </h1>
+
+              <p className='text-gray-500 mt-2'>
+                Manage drivers, approvals and RideLink operations.
+              </p>
+            </div>
+
+            <div className='flex items-center gap-3'>
+              <button
+                type='button'
+                onClick={loadDashboard}
+                disabled={loading}
+                className='bg-white border border-gray-200 hover:bg-gray-50 px-5 py-3 rounded-xl font-semibold text-gray-700 flex items-center gap-2 transition shadow-sm disabled:opacity-50'
+              >
+                <RefreshCw
+                  size={18}
+                  className={loading ? "animate-spin" : ""}
+                />
+                Refresh
+              </button>
+
+              <div className='hidden sm:flex items-center gap-3 bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-3'>
+                <div className='w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center'>
+                  <ShieldCheck size={21} className='text-yellow-600' />
+                </div>
+
+                <div>
+                  <p className='text-xs text-gray-500'>Account</p>
+
+                  <p className='font-bold text-gray-900'>Administrator</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          {error && (
+            <div className='mb-6 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 flex items-start gap-3'>
+              <XCircle size={21} className='text-red-500 mt-0.5 shrink-0' />
+
+              <div>
+                <p className='font-semibold text-red-700'>
+                  Something went wrong
+                </p>
+
+                <p className='text-sm text-red-600 mt-1'>{error}</p>
+              </div>
+            </div>
+          )}
+          <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8'>
+            <StatCard
+              title='Total Drivers'
+              value={stats.total}
+              icon={<Users size={24} />}
+              iconBg='bg-blue-100'
+              iconColor='text-blue-600'
+            />
+
+            <StatCard
+              title='Pending Approval'
+              value={stats.pending}
+              icon={<Clock size={24} />}
+              iconBg='bg-yellow-100'
+              iconColor='text-yellow-600'
+            />
+
+            <StatCard
+              title='Approved Drivers'
+              value={stats.approved}
+              icon={<CheckCircle size={24} />}
+              iconBg='bg-green-100'
+              iconColor='text-green-600'
+            />
+
+            <StatCard
+              title='Rejected Drivers'
+              value={stats.rejected}
+              icon={<XCircle size={24} />}
+              iconBg='bg-red-100'
+              iconColor='text-red-600'
+            />
+          </div>
+
+          {/* ==================================================
+              PENDING DRIVER SECTION
+          ================================================== */}
+
+          <section className='bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden'>
+            {/* Section Header */}
+
+            <div className='p-5 sm:p-7 border-b border-gray-100'>
+              <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+                <div>
+                  <div className='flex items-center gap-3'>
+                    <h2 className='text-2xl font-bold text-gray-900'>
+                      Pending Driver Requests
+                    </h2>
+
+                    <span className='bg-yellow-100 text-yellow-700 text-sm font-bold px-3 py-1 rounded-full'>
+                      {drivers.length}
+                    </span>
+                  </div>
+
+                  <p className='text-gray-500 mt-1'>
+                    Review and approve new driver registrations.
+                  </p>
+                </div>
+
+                <button
+                  type='button'
+                  onClick={() => navigate("/admin/pending-drivers")}
+                  className='text-sm font-semibold text-yellow-600 hover:text-yellow-700'
+                >
+                  View All →
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+
+            <div className='p-5 sm:p-7'>
+              {loading ? (
+                <LoadingState />
+              ) : drivers.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className='grid grid-cols-1 xl:grid-cols-2 gap-5'>
+                  {drivers.map((driver) => (
+                    <DriverCard
+                      key={driver._id}
+                      driver={driver}
+                      driverName={getDriverName(driver)}
+                      vehicleType={getVehicleType(driver)}
+                      vehicleNumber={getVehicleNumber(driver)}
+                      loading={actionLoading === driver._id}
+                      onApprove={handleApprove}
+                      onReject={handleReject}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// ======================================================
+// STAT CARD
+// ======================================================
+
+function StatCard({ title, value, icon, iconBg, iconColor }) {
+  return (
+    <div className='bg-white rounded-3xl shadow-sm border border-gray-100 p-5 sm:p-6'>
+      <div className='flex items-center justify-between'>
+        <div>
+          <p className='text-sm font-medium text-gray-500'>{title}</p>
+
+          <h2 className='text-3xl font-extrabold text-gray-900 mt-2'>
+            {value}
+          </h2>
+        </div>
+
+        <div
+          className={`w-12 h-12 rounded-2xl ${iconBg} ${iconColor} flex items-center justify-center`}
+        >
+          {icon}
+        </div>
       </div>
     </div>
   );
 }
 
-function StatCard({ title, value, icon }) {
-  return (
-    <div className='bg-white rounded-xl shadow p-6'>
-      <div className='flex justify-between'>
-        <div>
-          <p className='text-gray-500'>{title}</p>
+// ======================================================
+// DRIVER CARD
+// ======================================================
 
-          <h2 className='text-3xl font-bold mt-3'>{value}</h2>
+function DriverCard({
+  driver,
+  driverName,
+  vehicleType,
+  vehicleNumber,
+  loading,
+  onApprove,
+  onReject,
+}) {
+  return (
+    <div className='border border-gray-200 rounded-2xl p-5 hover:shadow-md transition bg-gray-50/50'>
+      {/* Driver Header */}
+
+      <div className='flex items-start justify-between gap-4'>
+        <div className='flex items-center gap-4 min-w-0'>
+          <div className='w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center shrink-0'>
+            <span className='text-lg font-extrabold text-gray-900'>
+              {driverName.charAt(0).toUpperCase()}
+            </span>
+          </div>
+
+          <div className='min-w-0'>
+            <h3 className='text-lg font-bold text-gray-900 truncate'>
+              {driverName}
+            </h3>
+
+            <div className='flex items-center gap-2 mt-1'>
+              <Clock size={14} className='text-yellow-600' />
+
+              <span className='text-sm text-yellow-700 font-semibold'>
+                Pending Approval
+              </span>
+            </div>
+          </div>
         </div>
 
-        {icon}
+        <span className='shrink-0 bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold'>
+          Pending
+        </span>
       </div>
+
+      {/* Driver Details */}
+
+      <div className='mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3'>
+        <DetailItem
+          icon={<Mail size={17} />}
+          label='Email'
+          value={driver?.email || "Not provided"}
+        />
+
+        <DetailItem
+          icon={<Phone size={17} />}
+          label='Phone'
+          value={driver?.phone || "Not provided"}
+        />
+
+        <DetailItem
+          icon={<Car size={17} />}
+          label='Vehicle'
+          value={vehicleType}
+        />
+
+        <DetailItem
+          icon={<CreditCard size={17} />}
+          label='Vehicle Number'
+          value={vehicleNumber}
+        />
+
+        <DetailItem
+          icon={<CreditCard size={17} />}
+          label='License Number'
+          value={driver?.licenseNumber || driver?.license || "Not provided"}
+        />
+      </div>
+
+      {/* Buttons */}
+
+      <div className='mt-5 pt-5 border-t border-gray-200 flex flex-col sm:flex-row gap-3'>
+        <button
+          type='button'
+          disabled={loading}
+          onClick={() => onApprove(driver._id)}
+          className='flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed'
+        >
+          {loading ? (
+            <span className='w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin' />
+          ) : (
+            <Check size={18} />
+          )}
+
+          {loading ? "Processing..." : "Approve Driver"}
+        </button>
+
+        <button
+          type='button'
+          disabled={loading}
+          onClick={() => onReject(driver._id)}
+          className='flex-1 bg-white border border-red-200 hover:bg-red-50 text-red-600 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed'
+        >
+          <Ban size={18} />
+          Reject
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ======================================================
+// DETAIL ITEM
+// ======================================================
+
+function DetailItem({ icon, label, value }) {
+  return (
+    <div className='bg-white rounded-xl p-3 border border-gray-100'>
+      <div className='flex items-center gap-2 text-gray-400'>
+        {icon}
+
+        <span className='text-xs font-medium'>{label}</span>
+      </div>
+
+      <p className='text-sm font-semibold text-gray-800 mt-1 truncate'>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+// ======================================================
+// LOADING STATE
+// ======================================================
+
+function LoadingState() {
+  return (
+    <div className='py-16 flex flex-col items-center justify-center text-center'>
+      <div className='w-12 h-12 rounded-full border-4 border-yellow-400 border-t-transparent animate-spin' />
+
+      <h3 className='text-xl font-bold text-gray-900 mt-6'>
+        Loading Dashboard...
+      </h3>
+
+      <p className='text-gray-500 mt-2'>Fetching driver approval requests.</p>
+    </div>
+  );
+}
+
+// ======================================================
+// EMPTY STATE
+// ======================================================
+
+function EmptyState() {
+  return (
+    <div className='py-16 flex flex-col items-center justify-center text-center'>
+      <div className='w-20 h-20 rounded-full bg-green-100 flex items-center justify-center'>
+        <CheckCircle size={38} className='text-green-500' />
+      </div>
+
+      <h3 className='text-2xl font-bold text-gray-900 mt-6'>
+        No Pending Drivers
+      </h3>
+
+      <p className='text-gray-500 mt-2 max-w-md'>
+        All driver registration requests have been reviewed. There are currently
+        no drivers waiting for approval.
+      </p>
     </div>
   );
 }

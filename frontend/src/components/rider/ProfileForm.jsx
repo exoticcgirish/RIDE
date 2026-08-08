@@ -175,6 +175,7 @@ const ProfileForm = ({ user, onUpdate }) => {
           {saving ? "Saving..." : "Save Profile"}
         </button>
       </div>
+      
     </form>
   );
 };
