@@ -25,40 +25,19 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-// ======================================================
-// BODY PARSERS
-// ======================================================
+console.log = () => {};
+console.info = () => {};
+console.warn = () => {};
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// ======================================================
-// API ROUTES
-// ======================================================
-
-// Authentication
 app.use("/api/auth", require("./routes/authRoutes"));
 
-// Users
 app.use("/api/users", require("./routes/user.routes"));
-
-// Protected routes
 app.use("/api/protected", require("./routes/protectedRoutes"));
-
-// Ride requests
 app.use("/api/ride-requests", require("./routes/rideRequest.routes"));
-
-// Admin
 app.use("/api/admin", require("./routes/admin.routes"));
-
-// Drivers
 app.use("/api/drivers", require("./routes/driver.routes"));
-
-// ======================================================
-// 404 HANDLER
-// ======================================================
-
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -66,11 +45,6 @@ app.use((req, res) => {
     path: req.originalUrl,
   });
 });
-
-// ======================================================
-// GLOBAL ERROR HANDLER
-// ======================================================
-
 app.use((err, req, res, next) => {
   console.error("=================================");
   console.error("[ERROR]");
@@ -89,9 +63,4 @@ app.use((err, req, res, next) => {
     }),
   });
 });
-
-// ======================================================
-// EXPORT APP
-// ======================================================
-
 module.exports = app;

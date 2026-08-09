@@ -8,14 +8,16 @@ const dbFallback = require("../dbFallback");
 const allowedRoles = ["driver", "rider", "admin"];
 
 const findUserByEmail = async (email) => {
+  const cleanEmail = email ? email.trim().toLowerCase() : "";
+
   if (dbFallback.isEnabled()) {
-    return dbFallback.findUserByEmail(email);
+    return dbFallback.findUserByEmail(cleanEmail);
   }
 
   return (
-    (await Rider.findOne({ email }).select("+password")) ||
-    (await Driver.findOne({ email }).select("+password")) ||
-    (await Admin.findOne({ email }).select("+password"))
+    (await Rider.findOne({ email: cleanEmail }).select("+password")) ||
+    (await Driver.findOne({ email: cleanEmail }).select("+password")) ||
+    (await Admin.findOne({ email: cleanEmail }).select("+password"))
   );
 };
 
@@ -38,72 +40,73 @@ exports.register = async (req, res) => {
       email,
       password,
       role,
-
       phone,
       vehicleType,
       vehicleNumber,
       licenseNumber,
     } = req.body;
 
+    if (!email || !password || !full_name) {
+      return res.status(400).json({
+        message: "Full name, email, and password are required.",
+      });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanFullName = full_name.trim();
     const selectedRole = allowedRoles.includes(role) ? role : "rider";
 
-    const existingUser = await findUserByEmail(email);
+    const existingUser = await findUserByEmail(cleanEmail);
 
     if (existingUser) {
       return res.status(400).json({
-        message: "User already exists",
+        message: "User already exists with this email",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const userData = {
+      full_name: cleanFullName,
+      email: cleanEmail,
+      password: hashedPassword,
+      role: selectedRole,
+    };
+
+    if (selectedRole === "driver") {
+      if (!phone || !vehicleType || !vehicleNumber || !licenseNumber) {
+        return res.status(400).json({
+          message:
+            "All driver details (phone, vehicle type, vehicle number, license number) are required.",
+        });
+      }
+
+      userData.phone = phone.trim();
+      userData.vehicleType = vehicleType.trim();
+      userData.vehicleNumber = vehicleNumber.trim().toUpperCase();
+      userData.licenseNumber = licenseNumber.trim().toUpperCase();
+    }
+
     let user;
 
     if (dbFallback.isEnabled()) {
-      user = await dbFallback.createUser({
-        full_name,
-        email,
-        password: hashedPassword,
-        role: selectedRole,
-        phone,
-        vehicleType,
-        vehicleNumber,
-        licenseNumber,
-      });
+      user = await dbFallback.createUser(userData);
     } else {
       let Model = Rider;
+      if (selectedRole === "driver") Model = Driver;
+      if (selectedRole === "admin") Model = Admin;
 
-      if (selectedRole === "driver") {
-        Model = Driver;
-      } else if (selectedRole === "admin") {
-        Model = Admin;
-      }
-
-      const data = {
-        full_name,
-        email,
-        password: hashedPassword,
-        role: selectedRole,
-      };
-
-      if (selectedRole === "driver") {
-        data.phone = phone;
-        data.vehicleType = vehicleType;
-        data.vehicleNumber = vehicleNumber;
-        data.licenseNumber = licenseNumber;
-      }
-
-      user = await Model.create(data);
+      user = await Model.create(userData);
     }
 
     res.status(201).json({
       success: true,
-      message: `${selectedRole} registered successfully`,
+      message: `${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} registered successfully`,
       user: sanitizeUser(user),
     });
   } catch (error) {
     res.status(500).json({
-      message: error.message,
+      message: error.message || "An error occurred during registration",
     });
   }
 };
@@ -111,9 +114,16 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password, role } = req.body;
-    const selectedRole = allowedRoles.includes(role) ? role : "rider"; // use enums
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
+    }
 
-    const user = await findUserByEmail(email);
+    const cleanEmail = email.trim().toLowerCase();
+    const selectedRole = allowedRoles.includes(role) ? role : "rider";
+
+    const user = await findUserByEmail(cleanEmail);
 
     if (!user) {
       return res.status(400).json({
@@ -146,7 +156,7 @@ exports.login = async (req, res) => {
       token,
       user: {
         _id: user._id,
-        name: user.name,
+        full_name: user.full_name || user.name,
         email: user.email,
         role: user.role,
         phone: user.phone,
@@ -156,6 +166,8 @@ exports.login = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res
+      .status(500)
+      .json({ message: error.message || "An error occurred during login" });
   }
 };

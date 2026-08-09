@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 
 import {
   Bell,
@@ -48,7 +49,7 @@ function RiderDashboard({ user, onLogout }) {
 
       const res = await createRideRequest(rideData);
 
-      alert(res.data?.message || "Ride request created successfully.");
+      toast.success(res.data?.message || "Ride request created successfully.");
 
       setRideData({
         pickupLocation: "",
@@ -62,7 +63,9 @@ function RiderDashboard({ user, onLogout }) {
 
       navigate("/my-ride-requests");
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to create ride request.");
+      toast.error(
+        err.response?.data?.message || "Failed to create ride request.",
+      );
     } finally {
       setLoading(false);
     }

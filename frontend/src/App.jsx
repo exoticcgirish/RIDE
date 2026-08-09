@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import "./App.css";
 
@@ -98,6 +100,8 @@ function App() {
 
   return (
     <BrowserRouter>
+        <ToastContainer position='top-right' autoClose={3000} theme='light' />
+
       <Routes>
         {/* ============================================================
             LANDING
@@ -380,10 +384,6 @@ function App() {
             )
           }
         />
-
-        {/* ============================================================
-            CREATE RIDE
-        ============================================================ */}
 
         <Route
           path='/create-ride'

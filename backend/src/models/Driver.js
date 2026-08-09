@@ -82,7 +82,7 @@ const driverSchema = new mongoose.Schema(
 
     vehicleType: {
       type: String,
-      enum: ["Auto", "Car", "Bike"],
+      enum: ["auto" || "Auto", "car" || "Car", "bike" || "Bike"],
       required: true,
     },
 

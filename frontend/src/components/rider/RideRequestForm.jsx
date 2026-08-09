@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { toast } from "react-toastify";
+
 import {
   ArrowLeft,
   MapPin,
@@ -41,7 +43,7 @@ function RideRequestForm() {
 
       const res = await createRideRequest(formData);
 
-      alert(res.data.message);
+      toast.success(res.data?.message || "Ride request created successfully.");
 
       setFormData({
         pickupLocation: "",
@@ -54,7 +56,9 @@ function RideRequestForm() {
 
       navigate("/my-ride-requests");
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to create ride request.");
+      toast.error(
+        err.response?.data?.message || "Failed to create ride request.",
+      );
     } finally {
       setLoading(false);
     }
