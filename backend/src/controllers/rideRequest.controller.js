@@ -9,14 +9,12 @@ const {
   assignDriver,
 } = require("../services/rideRequest.service.js");
 
+
 const {
   createRideRequestSchema,
   updateRideRequestSchema,
 } = require("../validators/rideRequest.validator.js");
 
-/**
- * Create Ride Request
- */
 exports.create = async (req, res) => {
   try {
     console.log("[rideRequest] create called by:", req.user && req.user.id);
@@ -46,9 +44,6 @@ exports.create = async (req, res) => {
   }
 };
 
-/**
- * Get My Ride Requests
- */
 exports.getMine = async (req, res) => {
   try {
     console.log("Logged User:", req.user);
@@ -72,9 +67,6 @@ exports.getMine = async (req, res) => {
   }
 };
 
-/**
- * Get Single Ride Request
- */
 exports.getById = async (req, res) => {
   try {
     const rideRequest = await getRideRequestById(req.params.id);
@@ -98,9 +90,6 @@ exports.getById = async (req, res) => {
   }
 };
 
-/**
- * Update Ride Request
- */
 exports.update = async (req, res) => {
   try {
     const { error } = updateRideRequestSchema.validate(req.body);
@@ -126,10 +115,6 @@ exports.update = async (req, res) => {
     });
   }
 };
-
-/**
- * Cancel Ride Request
- */
 exports.cancel = async (req, res) => {
   try {
     const rideRequest = await cancelRideRequest(req.params.id);
@@ -147,9 +132,6 @@ exports.cancel = async (req, res) => {
   }
 };
 
-/**
- * Delete Ride Request
- */
 exports.remove = async (req, res) => {
   try {
     await deleteRideRequest(req.params.id);
@@ -166,9 +148,6 @@ exports.remove = async (req, res) => {
   }
 };
 
-/**
- * Driver Search Ride Requests
- */
 exports.search = async (req, res) => {
   try {
     const { pickupLocation, destination, departureDate } = req.query;
@@ -192,9 +171,6 @@ exports.search = async (req, res) => {
   }
 };
 
-/**
- * Driver Accept Ride Request
- */
 exports.accept = async (req, res) => {
   try {
     const { driverId, tripId } = req.body;

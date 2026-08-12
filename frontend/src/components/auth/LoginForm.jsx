@@ -124,7 +124,7 @@ function LoginForm({ role, onMessage, onLogin }) {
           <div className='flex justify-end mb-6'>
             <button
               type='button'
-              onClick={() => onMessage("Password reset is not available yet.")}
+              onClick={() => toast.info("Password reset is not available yet.")}
               className='text-sm font-semibold text-yellow-600 hover:text-yellow-700 hover:underline'
             >
               Forgot Password?

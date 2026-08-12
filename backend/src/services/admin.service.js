@@ -1,10 +1,5 @@
 const Driver = require("../models/Driver");
 
-/*
-|--------------------------------------------------------------------------
-| Get Pending Drivers
-|--------------------------------------------------------------------------
-*/
 const getPendingDrivers = async () => {
   return await Driver.find({
     approvalStatus: "pending",
@@ -13,11 +8,6 @@ const getPendingDrivers = async () => {
   });
 };
 
-/*
-|--------------------------------------------------------------------------
-| Get Approved Drivers
-|--------------------------------------------------------------------------
-*/
 const getApprovedDrivers = async () => {
   return await Driver.find({
     approvalStatus: "approved",
@@ -26,11 +16,6 @@ const getApprovedDrivers = async () => {
   });
 };
 
-/*
-|--------------------------------------------------------------------------
-| Get Rejected Drivers
-|--------------------------------------------------------------------------
-*/
 const getRejectedDrivers = async () => {
   return await Driver.find({
     approvalStatus: "rejected",
@@ -39,11 +24,6 @@ const getRejectedDrivers = async () => {
   });
 };
 
-/*
-|--------------------------------------------------------------------------
-| Approve Driver
-|--------------------------------------------------------------------------
-*/
 const approveDriver = async (driverId, adminId) => {
   return await Driver.findByIdAndUpdate(
     driverId,
@@ -60,11 +40,6 @@ const approveDriver = async (driverId, adminId) => {
   );
 };
 
-/*
-|--------------------------------------------------------------------------
-| Reject Driver
-|--------------------------------------------------------------------------
-*/
 const rejectDriver = async (driverId, reason) => {
   return await Driver.findByIdAndUpdate(
     driverId,
@@ -81,11 +56,6 @@ const rejectDriver = async (driverId, reason) => {
   );
 };
 
-/*
-|--------------------------------------------------------------------------
-| Dashboard Counts
-|--------------------------------------------------------------------------
-*/
 const dashboardCounts = async () => {
   const pending = await Driver.countDocuments({
     approvalStatus: "pending",

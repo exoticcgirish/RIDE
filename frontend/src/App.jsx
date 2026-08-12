@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 import "./App.css";
 
 import LoginForm from "./components/auth/LoginForm";
@@ -100,24 +99,14 @@ function App() {
 
   return (
     <BrowserRouter>
-        <ToastContainer position='top-right' autoClose={3000} theme='light' />
+        <ToastContainer position='top-right' autoClose={2000} theme='light' />
 
       <Routes>
-        {/* ============================================================
-            LANDING
-        ============================================================ */}
-
         <Route path='/' element={<Landing />} />
-
-        {/* ============================================================
-            LOGIN
-        ============================================================ */}
-
         <Route
           path='/login'
           element={
             <div className='min-h-screen w-full bg-gradient-to-br from-yellow-50 via-white to-orange-50'>
-              {/* Top section */}
               <div className='w-full px-4 sm:px-6 pt-6'>
                 <div className='max-w-6xl mx-auto'>
                   <div className='flex flex-col items-center'>
@@ -132,7 +121,6 @@ function App() {
                       </p>
                     </div>
 
-                    {/* Role tabs */}
                     <div
                       className='flex items-center gap-1 sm:gap-2 bg-white p-1.5 rounded-full shadow-sm border border-gray-200'
                       aria-label='Choose role'
@@ -159,7 +147,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Login form */}
               <LoginForm
                 role={activeRole}
                 onMessage={setMessage}
@@ -167,7 +154,6 @@ function App() {
                 onRoleChange={setActiveRole}
               />
 
-              {/* Message */}
               {message && (
                 <div className='fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md'>
                   <div className='bg-white border border-gray-200 shadow-xl rounded-2xl px-5 py-4 text-sm text-gray-700 text-center'>
@@ -178,10 +164,6 @@ function App() {
             </div>
           }
         />
-
-        {/* ============================================================
-            REGISTER
-        ============================================================ */}
 
         <Route
           path='/register'
@@ -248,9 +230,6 @@ function App() {
           }
         />
 
-        {/* ============================================================
-            MAIN DASHBOARD
-        ============================================================ */}
 
         <Route
           path='/dashboard'
@@ -271,9 +250,6 @@ function App() {
           }
         />
 
-        {/* ============================================================
-            RIDER PROFILE
-        ============================================================ */}
 
         <Route
           path='/profile'
@@ -309,9 +285,6 @@ function App() {
           }
         />
 
-        {/* ============================================================
-            RIDE HISTORY
-        ============================================================ */}
 
         <Route
           path='/ride-history'
@@ -328,10 +301,6 @@ function App() {
           }
         />
 
-        {/* ============================================================
-            SAVED PLACES
-        ============================================================ */}
-
         <Route
           path='/saved-places'
           element={
@@ -347,10 +316,6 @@ function App() {
           }
         />
 
-        {/* ============================================================
-            PAYMENTS
-        ============================================================ */}
-
         <Route
           path='/payments'
           element={
@@ -365,11 +330,6 @@ function App() {
             )
           }
         />
-
-        {/* ============================================================
-            HELP
-        ============================================================ */}
-
         <Route
           path='/help'
           element={
@@ -400,10 +360,6 @@ function App() {
           }
         />
 
-        {/* ============================================================
-            MY RIDE REQUESTS
-        ============================================================ */}
-
         <Route
           path='/my-ride-requests'
           element={
@@ -418,10 +374,6 @@ function App() {
             )
           }
         />
-
-        {/* ============================================================
-            ADMIN
-        ============================================================ */}
 
         <Route
           path='/admin/dashboard'

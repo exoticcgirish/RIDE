@@ -11,21 +11,11 @@ const {
   getApprovalStatus,
 } = require("../controllers/driver.controller");
 
-/*
-|--------------------------------------------------------------------------
-| Driver Profile
-|--------------------------------------------------------------------------
-*/
 
 router.get("/profile", authMiddleware, roleMiddleware("driver"), getProfile);
 
 router.put("/profile", authMiddleware, roleMiddleware("driver"), updateProfile);
 
-/*
-|--------------------------------------------------------------------------
-| Driver Status
-|--------------------------------------------------------------------------
-*/
 
 router.get(
   "/status",

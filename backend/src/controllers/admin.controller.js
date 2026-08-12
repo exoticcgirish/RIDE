@@ -1,10 +1,5 @@
 const adminService = require("../services/admin.service");
 
-/*
-|--------------------------------------------------------------------------
-| Dashboard Statistics
-|--------------------------------------------------------------------------
-*/
 exports.dashboard = async (req, res) => {
   try {
     const data = await adminService.dashboardCounts();
@@ -21,11 +16,6 @@ exports.dashboard = async (req, res) => {
   }
 };
 
-/*
-|--------------------------------------------------------------------------
-| Pending Drivers
-|--------------------------------------------------------------------------
-*/
 exports.getPendingDrivers = async (req, res) => {
   try {
     const drivers = await adminService.getPendingDrivers();
@@ -43,11 +33,6 @@ exports.getPendingDrivers = async (req, res) => {
   }
 };
 
-/*
-|--------------------------------------------------------------------------
-| Approved Drivers
-|--------------------------------------------------------------------------
-*/
 exports.getApprovedDrivers = async (req, res) => {
   try {
     const drivers = await adminService.getApprovedDrivers();
@@ -65,11 +50,6 @@ exports.getApprovedDrivers = async (req, res) => {
   }
 };
 
-/*
-|--------------------------------------------------------------------------
-| Rejected Drivers
-|--------------------------------------------------------------------------
-*/
 exports.getRejectedDrivers = async (req, res) => {
   try {
     const drivers = await adminService.getRejectedDrivers();
@@ -87,11 +67,6 @@ exports.getRejectedDrivers = async (req, res) => {
   }
 };
 
-/*
-|--------------------------------------------------------------------------
-| Approve Driver
-|--------------------------------------------------------------------------
-*/
 exports.approveDriver = async (req, res) => {
   try {
     const driver = await adminService.approveDriver(req.params.id, req.user.id);
@@ -115,12 +90,6 @@ exports.approveDriver = async (req, res) => {
     });
   }
 };
-
-/*
-|--------------------------------------------------------------------------
-| Reject Driver
-|--------------------------------------------------------------------------
-*/
 exports.rejectDriver = async (req, res) => {
   try {
     const { reason } = req.body;

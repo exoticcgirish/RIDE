@@ -34,7 +34,7 @@ exports.updateProfile = async (req, res) => {
         },
       },
       {
-        new: true, // Return updated document
+        new: true,
         runValidators: true,
       },
     ).select("-password");

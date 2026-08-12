@@ -1,20 +1,8 @@
 const Driver = require("../models/Driver");
 
-/*
-|--------------------------------------------------------------------------
-| Get Driver Profile
-|--------------------------------------------------------------------------
-*/
-
 const getProfile = async (driverId) => {
   return await Driver.findById(driverId).select("-password");
 };
-
-/*
-|--------------------------------------------------------------------------
-| Update Driver Profile
-|--------------------------------------------------------------------------
-*/
 
 const updateProfile = async (driverId, data) => {
   return await Driver.findByIdAndUpdate(
@@ -36,11 +24,6 @@ const updateProfile = async (driverId, data) => {
   ).select("-password");
 };
 
-/*
-|--------------------------------------------------------------------------
-| Upload Driving License
-|--------------------------------------------------------------------------
-*/
 
 const updateLicense = async (driverId, licenseUrl) => {
   return await Driver.findByIdAndUpdate(
@@ -54,11 +37,6 @@ const updateLicense = async (driverId, licenseUrl) => {
   );
 };
 
-/*
-|--------------------------------------------------------------------------
-| Approval Status
-|--------------------------------------------------------------------------
-*/
 
 const getApprovalStatus = async (driverId) => {
   return await Driver.findById(driverId).select(

@@ -1,11 +1,5 @@
 const driverService = require("../services/driver.service");
 
-/*
-|--------------------------------------------------------------------------
-| Driver Profile
-|--------------------------------------------------------------------------
-*/
-
 exports.getProfile = async (req, res) => {
   try {
     const driver = await driverService.getProfile(req.user.id);
@@ -29,11 +23,6 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-/*
-|--------------------------------------------------------------------------
-| Update Profile
-|--------------------------------------------------------------------------
-*/
 
 exports.updateProfile = async (req, res) => {
   try {
@@ -52,11 +41,6 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-/*
-|--------------------------------------------------------------------------
-| Approval Status
-|--------------------------------------------------------------------------
-*/
 
 exports.getApprovalStatus = async (req, res) => {
   try {
