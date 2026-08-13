@@ -210,15 +210,11 @@ function App() {
                   </div>
                 </div>
               </div>
-
-              {/* Register form */}
               <RegisterForm
                 role={activeRole}
                 onMessage={setMessage}
                 onRoleChange={setActiveRole}
               />
-
-              {/* Message */}
               {message && (
                 <div className='fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-xl'>
                   <div className='bg-white border border-gray-200 shadow-xl rounded-2xl px-5 py-4 text-sm text-gray-700 text-center'>

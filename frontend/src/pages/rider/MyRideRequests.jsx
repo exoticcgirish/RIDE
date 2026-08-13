@@ -43,8 +43,14 @@ function MyRideRequests() {
   useEffect(() => {
     loadRequests();
   }, []);
-
+  const handleEdit = async (id) => {
+    const confirmed = window.alert("this is not currently available");
+    return;
+  };
   const handleCancel = async (id) => {
+    const confirmed = window.confirm("Are you sure you want to cancel This?");
+
+    if (!confirmed) return;
     try {
       await cancelRideRequest(id);
       loadRequests();
@@ -54,6 +60,9 @@ function MyRideRequests() {
   };
 
   const handleDelete = async (id) => {
+    const confirmed = window.confirm("Are you sure you want to delete This?");
+
+    if (!confirmed) return;
     try {
       await deleteRideRequest(id);
       loadRequests();
@@ -149,6 +158,7 @@ function MyRideRequests() {
                 onEdit={() =>
                   navigate(`/ride-requests/edit/${request._id || request.id}`)
                 }
+                onEdit={handleEdit}
                 onCancel={handleCancel}
                 onDelete={handleDelete}
               />
