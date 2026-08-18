@@ -4,7 +4,7 @@ const rideRequestSchema = new mongoose.Schema(
   {
     rider: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Rider",
+      ref: "Rider", // Change to "User" if your actual model is User
       required: true,
     },
 
@@ -55,6 +55,19 @@ const rideRequestSchema = new mongoose.Schema(
       max: 5,
     },
 
+    notes: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    // Ride grouping
+    groupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RideGroup",
+      default: null,
+    },
+
     status: {
       type: String,
       enum: ["waiting", "accepted", "cancelled", "completed"],
@@ -72,16 +85,10 @@ const rideRequestSchema = new mongoose.Schema(
       ref: "Trip",
       default: null,
     },
-
-    notes: {
-      type: String,
-      trim: true,
-      default: "",
-    },
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 module.exports =

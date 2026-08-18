@@ -99,7 +99,7 @@ function App() {
 
   return (
     <BrowserRouter>
-        <ToastContainer position='top-right' autoClose={2000} theme='light' />
+      <ToastContainer position='top-right' autoClose={2000} theme='light' />
 
       <Routes>
         <Route path='/' element={<Landing />} />
@@ -226,7 +226,6 @@ function App() {
           }
         />
 
-
         <Route
           path='/dashboard'
           element={
@@ -245,7 +244,6 @@ function App() {
             )
           }
         />
-
 
         <Route
           path='/profile'
@@ -280,7 +278,6 @@ function App() {
             )
           }
         />
-
 
         <Route
           path='/ride-history'

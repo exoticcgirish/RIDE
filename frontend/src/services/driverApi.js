@@ -1,25 +1,45 @@
-import api from "./api";
+import API from "./api";
 
-/*
-|--------------------------------------------------------------------------
-| Driver Profile
-|--------------------------------------------------------------------------
-*/
+// ========================================
+// DRIVER PROFILE
+// ========================================
 
 export const getDriverProfile = () => {
-  return api.get("/drivers/profile");
+  return API.get("/drivers/profile");
 };
 
 export const updateDriverProfile = (data) => {
-  return api.put("/drivers/profile", data);
+  return API.put("/drivers/profile", data);
 };
 
-/*
-|--------------------------------------------------------------------------
-| Approval Status
-|--------------------------------------------------------------------------
-*/
+// ========================================
+// DRIVER STATUS
+// ========================================
 
 export const getDriverStatus = () => {
-  return api.get("/drivers/status");
+  return API.get("/drivers/status");
+};
+
+// ========================================
+// AVAILABLE RIDE GROUPS
+// ========================================
+
+export const getAvailableRideGroups = () => {
+  return API.get("/ride-groups/available");
+};
+
+// ========================================
+// CURRENT RIDE GROUP
+// ========================================
+
+export const getCurrentGroup = () => {
+  return API.get("/ride-groups/current");
+};
+
+// ========================================
+// ACCEPT RIDE GROUP
+// ========================================
+
+export const acceptRideGroup = (groupId) => {
+  return API.patch(`/ride-groups/${groupId}/accept`);
 };

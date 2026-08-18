@@ -15,14 +15,21 @@ import {
   Users,
   ArrowRight,
   RefreshCw,
+  Phone,
+  Mail,
 } from "lucide-react";
 
-import { createRideRequest, getMyRideRequests } from "../../services/rideApi";
+import {
+  createRideRequest,
+  getMyRideRequests,
+} from "../../services/rideApi";
 
 function RiderDashboard({ user, onLogout }) {
   const navigate = useNavigate();
+
   const [rideData, setRideData] = useState({
     pickupLocation: "",
+    destination: "",
     departureDate: "",
     departureTime: "",
     seatsRequired: 1,
@@ -49,7 +56,9 @@ function RiderDashboard({ user, onLogout }) {
 
       const res = await createRideRequest(rideData);
 
-      toast.success(res.data?.message || "Ride request created successfully.");
+      toast.success(
+        res.data?.message || "Ride request created successfully.",
+      );
 
       setRideData({
         pickupLocation: "",
@@ -59,12 +68,14 @@ function RiderDashboard({ user, onLogout }) {
         seatsRequired: 1,
         notes: "",
       });
+
       await loadRideRequests();
 
       navigate("/my-ride-requests");
     } catch (err) {
       toast.error(
-        err.response?.data?.message || "Failed to create ride request.",
+        err.response?.data?.message ||
+          "Failed to create ride request.",
       );
     } finally {
       setLoading(false);
@@ -90,7 +101,8 @@ function RiderDashboard({ user, onLogout }) {
       console.error("Failed to load ride requests:", error);
 
       setRequestsError(
-        error.response?.data?.message || "Failed to load ride requests.",
+        error.response?.data?.message ||
+          "Failed to load ride requests.",
       );
 
       setRequests([]);
@@ -116,9 +128,16 @@ function RiderDashboard({ user, onLogout }) {
       }
 
       if (ride.departureTime) {
-        const [hours, minutes] = String(ride.departureTime).split(":");
+        const [hours, minutes] = String(
+          ride.departureTime,
+        ).split(":");
 
-        date.setHours(Number(hours) || 0, Number(minutes) || 0, 0, 0);
+        date.setHours(
+          Number(hours) || 0,
+          Number(minutes) || 0,
+          0,
+          0,
+        );
       }
 
       return date;
@@ -129,7 +148,11 @@ function RiderDashboard({ user, onLogout }) {
 
   const upcomingRides = requests
     .filter((ride) => {
-      if (!ride || ride.status === "cancelled" || ride.status === "completed") {
+      if (
+        !ride ||
+        ride.status === "cancelled" ||
+        ride.status === "completed"
+      ) {
         return false;
       }
 
@@ -165,7 +188,11 @@ function RiderDashboard({ user, onLogout }) {
 
       const rideDate = getRideDateTime(ride);
 
-      return rideDate && rideDate < new Date() && ride.status !== "cancelled";
+      return (
+        rideDate &&
+        rideDate < new Date() &&
+        ride.status !== "cancelled"
+      );
     })
     .sort((a, b) => {
       const dateA = getRideDateTime(a);
@@ -174,7 +201,10 @@ function RiderDashboard({ user, onLogout }) {
       return dateB - dateA;
     });
 
-  const lastRide = completedRides[0] || previousRides[0] || null;
+  const lastRide =
+    completedRides[0] ||
+    previousRides[0] ||
+    null;
 
   const totalRequests = requests.length;
 
@@ -240,7 +270,12 @@ function RiderDashboard({ user, onLogout }) {
 
     const date = new Date();
 
-    date.setHours(Number(hours) || 0, Number(minutes) || 0, 0, 0);
+    date.setHours(
+      Number(hours) || 0,
+      Number(minutes) || 0,
+      0,
+      0,
+    );
 
     return date.toLocaleTimeString("en-IN", {
       hour: "2-digit",
@@ -248,6 +283,7 @@ function RiderDashboard({ user, onLogout }) {
       hour12: true,
     });
   };
+
   const getStatusStyle = (status) => {
     switch (status) {
       case "accepted":
@@ -281,6 +317,12 @@ function RiderDashboard({ user, onLogout }) {
         return "Waiting";
     }
   };
+
+  const driver =
+    upcomingRide?.status === "accepted"
+      ? upcomingRide?.assignedDriver
+      : null;
+
   return (
     <div className='min-h-screen bg-gray-100'>
       <header className='bg-white shadow'>
@@ -288,7 +330,10 @@ function RiderDashboard({ user, onLogout }) {
           <div>
             <h1 className='text-4xl font-bold'>
               Welcome,
-              <span className='text-yellow-500'> {user?.name || "Rider"}</span>
+              <span className='text-yellow-500'>
+                {" "}
+                {user?.name || "Rider"}
+              </span>
             </h1>
 
             <p className='text-gray-500 mt-2'>
@@ -332,16 +377,21 @@ function RiderDashboard({ user, onLogout }) {
                 {requestsLoading ? "..." : item.value}
               </h2>
 
-              <p className='text-gray-500'>{item.title}</p>
+              <p className='text-gray-500'>
+                {item.title}
+              </p>
             </motion.div>
           ))}
         </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className='bg-white rounded-3xl shadow-lg p-8 mt-10'
         >
-          <h2 className='text-2xl font-bold mb-6'>Request a Ride</h2>
+          <h2 className='text-2xl font-bold mb-6'>
+            Request a Ride
+          </h2>
 
           <div className='grid md:grid-cols-2 gap-5'>
             <input
@@ -405,11 +455,16 @@ function RiderDashboard({ user, onLogout }) {
             disabled={loading}
             className='mt-6 w-full bg-yellow-400 hover:bg-yellow-500 py-4 rounded-2xl text-lg font-semibold transition disabled:opacity-50'
           >
-            {loading ? "Creating Ride..." : "Request Ride"}
+            {loading
+              ? "Creating Ride..."
+              : "Request Ride"}
           </button>
         </motion.div>
+
         <div className='mt-10'>
-          <h2 className='text-2xl font-bold mb-6'>Quick Actions</h2>
+          <h2 className='text-2xl font-bold mb-6'>
+            Quick Actions
+          </h2>
 
           <div className='grid md:grid-cols-2 xl:grid-cols-4 gap-6'>
             <motion.div
@@ -422,9 +477,13 @@ function RiderDashboard({ user, onLogout }) {
                 🚗
               </div>
 
-              <h3 className='font-bold text-2xl mt-5'>Create Ride</h3>
+              <h3 className='font-bold text-2xl mt-5'>
+                Create Ride
+              </h3>
 
-              <p className='text-gray-500 mt-2'>Request a new ride.</p>
+              <p className='text-gray-500 mt-2'>
+                Request a new ride.
+              </p>
             </motion.div>
 
             <motion.div
@@ -437,24 +496,34 @@ function RiderDashboard({ user, onLogout }) {
                 🔍
               </div>
 
-              <h3 className='font-bold text-2xl mt-5'>Find Ride</h3>
+              <h3 className='font-bold text-2xl mt-5'>
+                Find Ride
+              </h3>
 
-              <p className='text-gray-500 mt-2'>Browse available rides.</p>
+              <p className='text-gray-500 mt-2'>
+                Browse available rides.
+              </p>
             </motion.div>
 
             <motion.div
               whileHover={{ y: -8, scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => navigate("/my-ride-requests")}
+              onClick={() =>
+                navigate("/my-ride-requests")
+              }
               className='cursor-pointer bg-white rounded-3xl shadow-lg p-8'
             >
               <div className='w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center text-3xl text-white'>
                 📋
               </div>
 
-              <h3 className='font-bold text-2xl mt-5'>My Requests</h3>
+              <h3 className='font-bold text-2xl mt-5'>
+                My Requests
+              </h3>
 
-              <p className='text-gray-500 mt-2'>Manage your ride requests.</p>
+              <p className='text-gray-500 mt-2'>
+                Manage your ride requests.
+              </p>
             </motion.div>
 
             <motion.div
@@ -467,12 +536,17 @@ function RiderDashboard({ user, onLogout }) {
                 📜
               </div>
 
-              <h3 className='font-bold text-2xl mt-5'>Ride History</h3>
+              <h3 className='font-bold text-2xl mt-5'>
+                Ride History
+              </h3>
 
-              <p className='text-gray-500 mt-2'>View previous rides.</p>
+              <p className='text-gray-500 mt-2'>
+                View previous rides.
+              </p>
             </motion.div>
           </div>
         </div>
+
         <div className='grid lg:grid-cols-3 gap-8 mt-10'>
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -480,7 +554,9 @@ function RiderDashboard({ user, onLogout }) {
             className='lg:col-span-2 bg-white rounded-3xl shadow-lg p-8'
           >
             <div className='flex justify-between items-center'>
-              <h2 className='text-2xl font-bold'>Upcoming Ride</h2>
+              <h2 className='text-2xl font-bold'>
+                Upcoming Ride
+              </h2>
 
               {upcomingRide && (
                 <span
@@ -488,7 +564,9 @@ function RiderDashboard({ user, onLogout }) {
                     upcomingRide.status,
                   )}`}
                 >
-                  {getStatusLabel(upcomingRide.status)}
+                  {getStatusLabel(
+                    upcomingRide.status,
+                  )}
                 </span>
               )}
             </div>
@@ -497,11 +575,15 @@ function RiderDashboard({ user, onLogout }) {
               <div className='py-16 text-center'>
                 <div className='w-10 h-10 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto' />
 
-                <p className='text-gray-500 mt-4'>Loading upcoming ride...</p>
+                <p className='text-gray-500 mt-4'>
+                  Loading upcoming ride...
+                </p>
               </div>
             ) : requestsError ? (
               <div className='py-12 text-center'>
-                <p className='text-red-500'>{requestsError}</p>
+                <p className='text-red-500'>
+                  {requestsError}
+                </p>
 
                 <button
                   onClick={loadRideRequests}
@@ -515,14 +597,18 @@ function RiderDashboard({ user, onLogout }) {
               <div className='py-14 text-center'>
                 <div className='text-6xl'>🚗</div>
 
-                <h3 className='text-xl font-bold mt-5'>No Upcoming Ride</h3>
+                <h3 className='text-xl font-bold mt-5'>
+                  No Upcoming Ride
+                </h3>
 
                 <p className='text-gray-500 mt-2'>
                   You don't have any upcoming rides.
                 </p>
 
                 <button
-                  onClick={() => navigate("/create-ride")}
+                  onClick={() =>
+                    navigate("/create-ride")
+                  }
                   className='mt-6 bg-yellow-400 hover:bg-yellow-500 px-6 py-3 rounded-xl font-semibold'
                 >
                   Request a Ride
@@ -530,35 +616,46 @@ function RiderDashboard({ user, onLogout }) {
               </div>
             ) : (
               <div className='mt-8'>
-                {/* Pickup */}
-
                 <div className='flex items-start gap-4'>
                   <div className='w-14 h-14 rounded-full bg-green-100 flex items-center justify-center'>
-                    <MapPin className='text-green-600' size={26} />
+                    <MapPin
+                      className='text-green-600'
+                      size={26}
+                    />
                   </div>
 
                   <div>
-                    <p className='text-gray-500'>Pickup</p>
+                    <p className='text-gray-500'>
+                      Pickup
+                    </p>
 
                     <h3 className='text-xl font-bold'>
                       {upcomingRide.pickupLocation}
                     </h3>
                   </div>
                 </div>
+
                 <div className='ml-7 h-12 border-l-2 border-dashed border-gray-300' />
+
                 <div className='flex items-start gap-4'>
                   <div className='w-14 h-14 rounded-full bg-red-100 flex items-center justify-center'>
-                    <MapPin className='text-red-600' size={26} />
+                    <MapPin
+                      className='text-red-600'
+                      size={26}
+                    />
                   </div>
 
                   <div>
-                    <p className='text-gray-500'>Destination</p>
+                    <p className='text-gray-500'>
+                      Destination
+                    </p>
 
                     <h3 className='text-xl font-bold'>
                       {upcomingRide.destination}
                     </h3>
                   </div>
                 </div>
+
                 <div className='grid md:grid-cols-3 gap-5 mt-8'>
                   <div className='bg-gray-50 rounded-2xl p-5'>
                     <div className='flex items-center gap-2 text-gray-500'>
@@ -567,7 +664,9 @@ function RiderDashboard({ user, onLogout }) {
                     </div>
 
                     <h4 className='font-bold mt-2'>
-                      {formatDate(upcomingRide.departureDate)}
+                      {formatDate(
+                        upcomingRide.departureDate,
+                      )}
                     </h4>
                   </div>
 
@@ -578,7 +677,9 @@ function RiderDashboard({ user, onLogout }) {
                     </div>
 
                     <h4 className='font-bold mt-2'>
-                      {formatTime(upcomingRide.departureTime)}
+                      {formatTime(
+                        upcomingRide.departureTime,
+                      )}
                     </h4>
                   </div>
 
@@ -589,14 +690,125 @@ function RiderDashboard({ user, onLogout }) {
                     </div>
 
                     <h4 className='font-bold mt-2'>
-                      {upcomingRide.seatsRequired || 1} Seat
-                      {upcomingRide.seatsRequired > 1 ? "s" : ""}
+                      {upcomingRide.seatsRequired || 1}{" "}
+                      Seat
+                      {upcomingRide.seatsRequired > 1
+                        ? "s"
+                        : ""}
                     </h4>
                   </div>
                 </div>
 
+                {driver && (
+                  <div className='mt-8 bg-gray-50 rounded-2xl p-6'>
+                    <div className='flex justify-between items-center mb-5'>
+                      <div>
+                        <h3 className='text-xl font-bold'>
+                          Driver Details
+                        </h3>
+
+                        <p className='text-gray-500 mt-1'>
+                          Your driver has accepted this ride.
+                        </p>
+                      </div>
+
+                      <div className='bg-green-100 text-green-700 px-3 py-2 rounded-full text-sm font-semibold'>
+                        Driver Assigned
+                      </div>
+                    </div>
+
+                    <div className='grid md:grid-cols-2 gap-4'>
+                      <div className='bg-white rounded-xl p-4'>
+                        <p className='text-sm text-gray-500'>
+                          Driver Name
+                        </p>
+
+                        <p className='font-bold mt-1'>
+                          {driver.full_name ||
+                            driver.name ||
+                            "N/A"}
+                        </p>
+                      </div>
+
+                      <div className='bg-white rounded-xl p-4'>
+                        <div className='flex items-center gap-2 text-gray-500'>
+                          <Phone size={16} />
+                          <p className='text-sm'>
+                            Mobile
+                          </p>
+                        </div>
+
+                        <p className='font-bold mt-1'>
+                          {driver.phone || "N/A"}
+                        </p>
+                      </div>
+
+                      <div className='bg-white rounded-xl p-4'>
+                        <div className='flex items-center gap-2 text-gray-500'>
+                          <Mail size={16} />
+                          <p className='text-sm'>
+                            Email
+                          </p>
+                        </div>
+
+                        <p className='font-bold mt-1 break-all'>
+                          {driver.email || "N/A"}
+                        </p>
+                      </div>
+
+                      <div className='bg-white rounded-xl p-4'>
+                        <p className='text-sm text-gray-500'>
+                          Vehicle Type
+                        </p>
+
+                        <p className='font-bold mt-1'>
+                          {driver.vehicleType ||
+                            "N/A"}
+                        </p>
+                      </div>
+
+                      <div className='bg-white rounded-xl p-4'>
+                        <p className='text-sm text-gray-500'>
+                          Vehicle Number
+                        </p>
+
+                        <p className='font-bold mt-1'>
+                          {driver.vehicleNumber ||
+                            "N/A"}
+                        </p>
+                      </div>
+
+                      <div className='bg-white rounded-xl p-4'>
+                        <p className='text-sm text-gray-500'>
+                          Vehicle Model
+                        </p>
+
+                        <p className='font-bold mt-1'>
+                          {driver.vehicleModel ||
+                            "N/A"}
+                        </p>
+                      </div>
+
+                      <div className='bg-white rounded-xl p-4'>
+                        <p className='text-sm text-gray-500'>
+                          Vehicle Color
+                        </p>
+
+                        <p className='font-bold mt-1'>
+                          {driver.vehicleColor ||
+                            "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <button
-                  onClick={() => navigate(`/ride-requests/${upcomingRide._id}`)}
+                  onClick={() =>
+                    navigate(
+                      `/ride-requests/${upcomingRide._id}`,
+                    )
+                  }
                   className='mt-8 bg-yellow-400 hover:bg-yellow-500 px-8 py-3 rounded-xl font-semibold transition inline-flex items-center gap-2'
                 >
                   View Ride Details
@@ -612,7 +824,9 @@ function RiderDashboard({ user, onLogout }) {
             className='bg-white rounded-3xl shadow-lg p-8'
           >
             <div className='flex justify-between items-center'>
-              <h2 className='text-2xl font-bold'>Last Ride</h2>
+              <h2 className='text-2xl font-bold'>
+                Last Ride
+              </h2>
 
               {lastRide && (
                 <span
@@ -629,13 +843,17 @@ function RiderDashboard({ user, onLogout }) {
               <div className='py-12 text-center'>
                 <div className='w-9 h-9 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto' />
 
-                <p className='text-gray-500 mt-4'>Loading...</p>
+                <p className='text-gray-500 mt-4'>
+                  Loading...
+                </p>
               </div>
             ) : !lastRide ? (
               <div className='py-12 text-center'>
                 <div className='text-5xl'>📜</div>
 
-                <h3 className='font-bold text-xl mt-5'>No Previous Ride</h3>
+                <h3 className='font-bold text-xl mt-5'>
+                  No Previous Ride
+                </h3>
 
                 <p className='text-gray-500 mt-2'>
                   Your previous ride will appear here.
@@ -645,11 +863,16 @@ function RiderDashboard({ user, onLogout }) {
               <div className='mt-8'>
                 <div className='flex items-start gap-3'>
                   <div className='w-11 h-11 rounded-full bg-green-100 flex items-center justify-center'>
-                    <MapPin size={21} className='text-green-600' />
+                    <MapPin
+                      size={21}
+                      className='text-green-600'
+                    />
                   </div>
 
                   <div className='min-w-0'>
-                    <p className='text-xs text-gray-500'>Pickup</p>
+                    <p className='text-xs text-gray-500'>
+                      Pickup
+                    </p>
 
                     <h3 className='font-bold text-lg truncate'>
                       {lastRide.pickupLocation}
@@ -661,11 +884,16 @@ function RiderDashboard({ user, onLogout }) {
 
                 <div className='flex items-start gap-3'>
                   <div className='w-11 h-11 rounded-full bg-red-100 flex items-center justify-center'>
-                    <MapPin size={21} className='text-red-600' />
+                    <MapPin
+                      size={21}
+                      className='text-red-600'
+                    />
                   </div>
 
                   <div className='min-w-0'>
-                    <p className='text-xs text-gray-500'>Destination</p>
+                    <p className='text-xs text-gray-500'>
+                      Destination
+                    </p>
 
                     <h3 className='font-bold text-lg truncate'>
                       {lastRide.destination}
@@ -675,18 +903,26 @@ function RiderDashboard({ user, onLogout }) {
 
                 <div className='grid grid-cols-2 gap-4 mt-7'>
                   <div className='bg-gray-50 rounded-2xl p-4'>
-                    <p className='text-xs text-gray-500'>Date</p>
+                    <p className='text-xs text-gray-500'>
+                      Date
+                    </p>
 
                     <p className='font-bold mt-1'>
-                      {formatDate(lastRide.departureDate)}
+                      {formatDate(
+                        lastRide.departureDate,
+                      )}
                     </p>
                   </div>
 
                   <div className='bg-gray-50 rounded-2xl p-4'>
-                    <p className='text-xs text-gray-500'>Time</p>
+                    <p className='text-xs text-gray-500'>
+                      Time
+                    </p>
 
                     <p className='font-bold mt-1'>
-                      {formatTime(lastRide.departureTime)}
+                      {formatTime(
+                        lastRide.departureTime,
+                      )}
                     </p>
                   </div>
                 </div>
@@ -694,18 +930,23 @@ function RiderDashboard({ user, onLogout }) {
                 <div className='bg-gray-50 rounded-2xl p-4 mt-4'>
                   <div className='flex items-center gap-2 text-gray-500'>
                     <Users size={18} />
-
                     <span>Seats</span>
                   </div>
 
                   <p className='font-bold mt-1'>
                     {lastRide.seatsRequired || 1} Seat
-                    {lastRide.seatsRequired > 1 ? "s" : ""}
+                    {lastRide.seatsRequired > 1
+                      ? "s"
+                      : ""}
                   </p>
                 </div>
 
                 <button
-                  onClick={() => navigate(`/ride-requests/${lastRide._id}`)}
+                  onClick={() =>
+                    navigate(
+                      `/ride-requests/${lastRide._id}`,
+                    )
+                  }
                   className='mt-6 w-full border border-gray-300 hover:bg-gray-100 px-5 py-3 rounded-xl font-semibold transition'
                 >
                   View Ride
@@ -714,6 +955,7 @@ function RiderDashboard({ user, onLogout }) {
             )}
           </motion.div>
         </div>
+
         <div className='flex justify-end mt-10'>
           <button
             onClick={onLogout}

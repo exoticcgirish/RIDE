@@ -58,7 +58,7 @@ const createRideRequest = async (riderId, data) => {
     departureTime: data.departureTime,
     seatsRequired: data.seatsRequired || 1,
     notes: data.notes || "",
-    status: "waiting",
+    status: "ready",
     assignedDriver: null,
     trip: null,
     createdAt: new Date(),

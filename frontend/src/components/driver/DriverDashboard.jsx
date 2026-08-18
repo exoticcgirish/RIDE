@@ -1,163 +1,792 @@
 import { useEffect, useState } from "react";
+
 import {
-  Car,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Search,
-  User,
-  LogOut,
-} from "lucide-react";
+  getAvailableRideGroups,
+  acceptRideGroup,
+} from "../../services/driverApi";
 
-import { getDriverProfile } from "../../services/driverApi";
+function DriverDashboard() {
+  const [groups, setGroups] = useState([]);
 
-function DriverDashboard({ onLogout }) {
-  const [driver, setDriver] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDriver();
-  }, []);
+  const [error, setError] = useState("");
 
-  const loadDriver = async () => {
+  const [acceptingId, setAcceptingId] = useState(null);
+
+  // ==========================================
+  // FETCH AVAILABLE GROUPS
+  // ==========================================
+
+  const fetchGroups = async () => {
     try {
-      const res = await getDriverProfile();
-      setDriver(res.data.data);
-    } catch (err) {
-      console.error(err);
+      setLoading(true);
+      setError("");
+
+      const response = await getAvailableRideGroups();
+
+      console.log(
+        "Available ride groups:",
+        response.data
+      );
+
+      setGroups(response.data.data || []);
+    } catch (error) {
+      console.error(
+        "Fetch ride groups error:",
+        error
+      );
+
+      setError(
+        error.response?.data?.message ||
+          "Failed to load ride groups."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className='flex justify-center items-center h-screen'>
-        Loading...
-      </div>
+  // ==========================================
+  // LOAD GROUPS WHEN PAGE OPENS
+  // ==========================================
+
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  // ==========================================
+  // ACCEPT GROUP
+  // ==========================================
+
+  const handleAcceptGroup = async (groupId) => {
+    try {
+      setAcceptingId(groupId);
+
+      const response =
+        await acceptRideGroup(groupId);
+
+      console.log(
+        "Accepted group:",
+        response.data
+      );
+
+      // Remove accepted group
+      setGroups((previousGroups) =>
+        previousGroups.filter(
+          (group) => group._id !== groupId
+        )
+      );
+
+      alert(
+        "Ride group accepted successfully."
+      );
+    } catch (error) {
+      console.error(
+        "Accept group error:",
+        error
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to accept ride group."
+      );
+    } finally {
+      setAcceptingId(null);
+    }
+  };
+
+  // ==========================================
+  // SUMMARY
+  // ==========================================
+
+  const totalRiders = groups.reduce(
+    (total, group) =>
+      total + (group.members?.length || 0),
+    0
+  );
+
+  const totalSeats = groups.reduce(
+    (total, group) =>
+      total + Number(group.totalSeats || 0),
+    0
+  );
+
+  // ==========================================
+  // FORMAT DATE
+  // ==========================================
+
+  const formatDate = (date) => {
+    if (!date) {
+      return "N/A";
+    }
+
+    return new Date(date).toLocaleDateString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
     );
-  }
+  };
 
   return (
-    <div className='min-h-screen bg-gray-100'>
-      {/* Header */}
+    <div className="min-h-screen bg-[#fafafa] text-[#172033]">
 
-      <div className='bg-black text-white p-6 flex justify-between items-center'>
-        <div>
-          <h1 className='text-3xl font-bold'>Driver Dashboard</h1>
+      {/* ========================================
+          HEADER
+      ======================================== */}
 
-          <p className='text-gray-400'>Welcome {driver.full_name}</p>
-        </div>
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
 
-        <button onClick={onLogout} className='bg-red-500 px-5 py-2 rounded-lg'>
-          <LogOut size={18} />
-        </button>
-      </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-      <div className='max-w-6xl mx-auto p-6'>
-        {/* Profile */}
+          <div className="h-20 flex items-center justify-between">
 
-        <div className='bg-white rounded-xl shadow p-6 mb-6'>
-          <div className='flex items-center gap-4'>
-            <User size={40} />
+            {/* LOGO */}
 
             <div>
-              <h2 className='text-2xl font-bold'>{driver.full_name}</h2>
+              <h1 className="text-3xl font-extrabold tracking-tight">
 
-              <p>{driver.email}</p>
+                <span className="text-[#172033]">
+                  Ride
+                </span>
 
-              <p>{driver.phone}</p>
+                <span className="text-[#fdbd00]">
+                  Link
+                </span>
+
+              </h1>
+
+              <p className="text-xs text-gray-400">
+                Driver Dashboard
+              </p>
             </div>
+
+            {/* RIGHT */}
+
+            <div className="flex items-center gap-3">
+
+              {/* ONLINE */}
+
+              <div className="hidden sm:flex items-center gap-2 bg-green-50 text-green-600 px-4 py-2 rounded-full text-sm font-semibold">
+
+                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+
+                Online
+
+              </div>
+
+              {/* REFRESH */}
+
+              <button
+                onClick={fetchGroups}
+                disabled={loading}
+                className="w-10 h-10 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition flex items-center justify-center text-xl disabled:opacity-50"
+                title="Refresh"
+              >
+                ↻
+              </button>
+
+              {/* DRIVER */}
+
+              <div className="w-10 h-10 rounded-full bg-[#172033] text-white flex items-center justify-center font-bold">
+                D
+              </div>
+
+            </div>
+
           </div>
+
         </div>
 
-        {/* Approval Status */}
+      </header>
 
-        <div className='bg-white rounded-xl shadow p-6'>
-          <h2 className='text-xl font-bold mb-5'>Account Status</h2>
 
-          {driver.approvalStatus === "pending" && (
-            <div className='bg-yellow-100 border border-yellow-400 rounded-lg p-5'>
-              <div className='flex gap-3 items-center'>
-                <Clock />
+      {/* ========================================
+          MAIN
+      ======================================== */}
 
-                <div>
-                  <h3 className='font-bold'>Pending Approval</h3>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-                  <p>Your account is waiting for admin approval.</p>
-                </div>
-              </div>
-            </div>
-          )}
+        {/* PAGE TITLE */}
 
-          {driver.approvalStatus === "approved" && (
-            <div className='bg-green-100 border border-green-400 rounded-lg p-5'>
-              <div className='flex gap-3 items-center'>
-                <CheckCircle />
+        <div className="mb-8">
 
-                <div>
-                  <h3 className='font-bold'>Approved</h3>
+          <p className="text-sm text-gray-400">
+            Driver Dashboard
+          </p>
 
-                  <p>Your account is verified.</p>
-                </div>
-              </div>
-            </div>
-          )}
+          <h2 className="text-2xl sm:text-3xl font-extrabold mt-1">
+            Available Ride Groups
+          </h2>
 
-          {driver.approvalStatus === "rejected" && (
-            <div className='bg-red-100 border border-red-400 rounded-lg p-5'>
-              <div className='flex gap-3 items-center'>
-                <XCircle />
+          <p className="text-gray-500 mt-2">
+            View grouped ride requests and accept
+            an available group.
+          </p>
 
-                <div>
-                  <h3 className='font-bold'>Rejected</h3>
-
-                  <p>{driver.rejectReason}</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Driver Features */}
 
-        <div className='grid md:grid-cols-3 gap-6 mt-8'>
-          <button
-            disabled={driver.approvalStatus !== "approved"}
-            className={`rounded-xl p-8 shadow text-center ${
-              driver.approvalStatus === "approved"
-                ? "bg-yellow-400 hover:bg-yellow-500"
-                : "bg-gray-300 cursor-not-allowed"
-            }`}
-          >
-            <Search size={40} className='mx-auto mb-3' />
+        {/* ========================================
+            SUMMARY CARDS
+        ======================================== */}
 
-            <h2 className='text-xl font-bold'>Search Riders</h2>
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
 
-          <button
-            disabled={driver.approvalStatus !== "approved"}
-            className={`rounded-xl p-8 shadow text-center ${
-              driver.approvalStatus === "approved" ? "bg-white" : "bg-gray-300"
-            }`}
-          >
-            <Car size={40} className='mx-auto mb-3' />
+          {/* AVAILABLE GROUPS */}
 
-            <h2 className='text-xl font-bold'>Current Trip</h2>
-          </button>
+          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
 
-          <button
-            disabled={driver.approvalStatus !== "approved"}
-            className={`rounded-xl p-8 shadow text-center ${
-              driver.approvalStatus === "approved" ? "bg-white" : "bg-gray-300"
-            }`}
-          >
-            <Clock size={40} className='mx-auto mb-3' />
+            <div className="flex items-center justify-between">
 
-            <h2 className='text-xl font-bold'>Trip History</h2>
-          </button>
+              <div>
+
+                <p className="text-sm text-gray-400">
+                  Available Groups
+                </p>
+
+                <h3 className="text-3xl font-extrabold mt-2">
+                  {groups.length}
+                </h3>
+
+              </div>
+
+              <div className="w-12 h-12 rounded-xl bg-[#fff5d6] flex items-center justify-center text-xl">
+                👥
+              </div>
+
+            </div>
+
+            <p className="text-xs text-gray-400 mt-3">
+              Groups waiting for drivers
+            </p>
+
+          </div>
+
+
+          {/* RIDERS */}
+
+          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+
+            <div className="flex items-center justify-between">
+
+              <div>
+
+                <p className="text-sm text-gray-400">
+                  Total Riders
+                </p>
+
+                <h3 className="text-3xl font-extrabold mt-2">
+                  {totalRiders}
+                </h3>
+
+              </div>
+
+              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-xl">
+                🧑
+              </div>
+
+            </div>
+
+            <p className="text-xs text-gray-400 mt-3">
+              Across available groups
+            </p>
+
+          </div>
+
+
+          {/* SEATS */}
+
+          <div className="bg-[#172033] rounded-2xl p-5 shadow-sm text-white">
+
+            <div className="flex items-center justify-between">
+
+              <div>
+
+                <p className="text-sm text-gray-300">
+                  Available Seats
+                </p>
+
+                <h3 className="text-3xl font-extrabold mt-2">
+                  {totalSeats}
+                </h3>
+
+              </div>
+
+              <div className="w-12 h-12 rounded-xl bg-[#fdbd00] text-[#172033] flex items-center justify-center text-xl">
+                🚗
+              </div>
+
+            </div>
+
+            <p className="text-xs text-gray-300 mt-3">
+              Across available groups
+            </p>
+
+          </div>
+
         </div>
-      </div>
+
+
+        {/* ========================================
+            ERROR
+        ======================================== */}
+
+        {error && (
+
+          <div className="mb-6 bg-red-50 border border-red-100 rounded-xl p-4">
+
+            <p className="text-red-600 font-semibold">
+              {error}
+            </p>
+
+            <button
+              onClick={fetchGroups}
+              className="text-red-600 text-sm underline mt-2"
+            >
+              Try again
+            </button>
+
+          </div>
+
+        )}
+
+
+        {/* ========================================
+            LOADING
+        ======================================== */}
+
+        {loading && (
+
+          <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center">
+
+            <div className="w-10 h-10 mx-auto border-4 border-gray-200 border-t-[#fdbd00] rounded-full animate-spin"></div>
+
+            <p className="text-gray-400 mt-4">
+              Loading available ride groups...
+            </p>
+
+          </div>
+
+        )}
+
+
+        {/* ========================================
+            EMPTY
+        ======================================== */}
+
+        {!loading &&
+          !error &&
+          groups.length === 0 && (
+
+            <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center">
+
+              <div className="w-20 h-20 mx-auto bg-[#fff5d6] rounded-2xl flex items-center justify-center text-3xl">
+                🚗
+              </div>
+
+              <h3 className="text-xl font-extrabold mt-5">
+                No ride groups available
+              </h3>
+
+              <p className="text-gray-400 mt-2">
+                New groups will appear here when
+                they are ready for a driver.
+              </p>
+
+              <button
+                onClick={fetchGroups}
+                className="mt-6 bg-[#fdbd00] hover:bg-[#efb000] text-[#172033] px-6 py-3 rounded-xl font-bold transition"
+              >
+                Refresh Groups
+              </button>
+
+            </div>
+
+          )}
+
+
+        {/* ========================================
+            GROUP LIST
+        ======================================== */}
+
+        {!loading &&
+          groups.length > 0 && (
+
+            <div className="space-y-6">
+
+              {groups.map((group) => (
+
+                <div
+                  key={group._id}
+                  className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden"
+                >
+
+                  {/* ==================================
+                      GROUP HEADER
+                  =================================== */}
+
+                  <div className="px-5 sm:px-7 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+                    <div className="flex items-center gap-4">
+
+                      <div className="w-12 h-12 rounded-xl bg-[#fff5d6] flex items-center justify-center text-xl">
+                        👥
+                      </div>
+
+                      <div>
+
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">
+                          Ride Group
+                        </p>
+
+                        <h3 className="text-lg font-extrabold">
+                          Group #
+                          {group._id?.slice(-6)}
+                        </h3>
+
+                      </div>
+
+                    </div>
+
+                    <span className="w-fit px-4 py-1.5 rounded-full bg-green-50 text-green-600 text-xs font-bold capitalize">
+                      {group.status || "ready"}
+                    </span>
+
+                  </div>
+
+
+                  {/* ==================================
+                      GROUP CONTENT
+                  =================================== */}
+
+                  <div className="p-5 sm:p-7">
+
+                    {/* ==================================
+                        ROUTE
+                    =================================== */}
+
+                    <div>
+
+                      <p className="text-xs text-gray-400 font-bold uppercase tracking-wide mb-4">
+                        Route
+                      </p>
+
+                      <div className="flex gap-4">
+
+                        {/* ROUTE LINE */}
+
+                        <div className="flex flex-col items-center pt-1">
+
+                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+
+                          <div className="w-px h-14 bg-gray-200"></div>
+
+                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+
+                        </div>
+
+
+                        {/* LOCATIONS */}
+
+                        <div className="flex-1">
+
+                          <div>
+
+                            <p className="text-xs text-gray-400">
+                              PICKUP
+                            </p>
+
+                            <p className="font-bold mt-1">
+                              {group.pickupLocation ||
+                                "Pickup location unavailable"}
+                            </p>
+
+                          </div>
+
+
+                          <div className="mt-7">
+
+                            <p className="text-xs text-gray-400">
+                              DESTINATION
+                            </p>
+
+                            <p className="font-bold mt-1">
+                              {group.destination ||
+                                "Destination unavailable"}
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+
+                    {/* ==================================
+                        GROUP DETAILS
+                    =================================== */}
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-7">
+
+                      {/* DATE */}
+
+                      <div className="bg-gray-50 rounded-xl p-4">
+
+                        <p className="text-xs text-gray-400">
+                          DEPARTURE DATE
+                        </p>
+
+                        <p className="font-bold mt-2">
+                          {formatDate(
+                            group.departureDate
+                          )}
+                        </p>
+
+                      </div>
+
+
+                      {/* TIME */}
+
+                      <div className="bg-gray-50 rounded-xl p-4">
+
+                        <p className="text-xs text-gray-400">
+                          DEPARTURE TIME
+                        </p>
+
+                        <p className="font-bold mt-2">
+                          {group.departureTime ||
+                            "N/A"}
+                        </p>
+
+                      </div>
+
+
+                      {/* MEMBERS */}
+
+                      <div className="bg-gray-50 rounded-xl p-4">
+
+                        <p className="text-xs text-gray-400">
+                          MEMBERS
+                        </p>
+
+                        <p className="font-bold mt-2">
+                          {group.members?.length || 0}
+                        </p>
+
+                      </div>
+
+
+                      {/* SEATS */}
+
+                      <div className="bg-gray-50 rounded-xl p-4">
+
+                        <p className="text-xs text-gray-400">
+                          TOTAL SEATS
+                        </p>
+
+                        <p className="font-bold mt-2">
+                          {group.totalSeats || 0}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+
+                    {/* ==================================
+                        MEMBERS
+                    =================================== */}
+
+                    <div className="mt-7 pt-6 border-t border-gray-100">
+
+                      <div className="flex items-center justify-between mb-4">
+
+                        <div>
+
+                          <h4 className="font-extrabold">
+                            Group Members
+                          </h4>
+
+                          <p className="text-xs text-gray-400 mt-1">
+                            Riders included in this
+                            group
+                          </p>
+
+                        </div>
+
+                        <span className="text-sm font-bold">
+                          {group.members?.length || 0}
+                        </span>
+
+                      </div>
+
+
+                      {group.members?.length > 0 ? (
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                          {group.members.map(
+                            (member, index) => {
+
+                              const name =
+                                member.name ||
+                                member.full_name ||
+                                `Rider ${index + 1}`;
+
+                              return (
+
+                                <div
+                                  key={
+                                    member._id ||
+                                    index
+                                  }
+                                  className="bg-gray-50 rounded-xl p-4"
+                                >
+
+                                  <div className="flex items-center gap-3">
+
+                                    {/* AVATAR */}
+
+                                    <div className="w-10 h-10 flex-shrink-0 rounded-full bg-[#172033] text-white flex items-center justify-center font-bold">
+                                      {name
+                                        .charAt(0)
+                                        .toUpperCase()}
+                                    </div>
+
+
+                                    {/* MEMBER INFO */}
+
+                                    <div className="min-w-0">
+
+                                      <p className="font-bold text-sm truncate">
+                                        {name}
+                                      </p>
+
+                                      {member.email && (
+
+                                        <p className="text-xs text-gray-400 mt-1 truncate">
+                                          {member.email}
+                                        </p>
+
+                                      )}
+
+                                      {member.phone && (
+
+                                        <p className="text-xs text-gray-400">
+                                          {member.phone}
+                                        </p>
+
+                                      )}
+
+                                      {member.college && (
+
+                                        <p className="text-xs text-gray-400 truncate">
+                                          {member.college}
+                                        </p>
+
+                                      )}
+
+                                    </div>
+
+                                  </div>
+
+                                </div>
+
+                              );
+                            }
+                          )}
+
+                        </div>
+
+                      ) : (
+
+                        <p className="text-sm text-gray-400">
+                          No member information available.
+                        </p>
+
+                      )}
+
+                    </div>
+
+
+                    {/* ==================================
+                        NOTES
+                    =================================== */}
+
+                    {group.notes && (
+
+                      <div className="mt-6 bg-[#fff9e8] border border-[#fbe8a8] rounded-xl p-4">
+
+                        <p className="text-xs font-bold text-gray-500 uppercase">
+                          Notes
+                        </p>
+
+                        <p className="text-sm text-gray-700 mt-2">
+                          {group.notes}
+                        </p>
+
+                      </div>
+
+                    )}
+
+
+                    {/* ==================================
+                        ACCEPT GROUP
+                    =================================== */}
+
+                    <div className="mt-7 pt-6 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+                      <div>
+
+                        <p className="text-xs text-gray-400 uppercase">
+                          Group Status
+                        </p>
+
+                        <p className="font-bold text-sm mt-1 capitalize">
+                          {group.status || "ready"}
+                        </p>
+
+                      </div>
+
+
+                      <button
+                        disabled={
+                          acceptingId === group._id
+                        }
+                        onClick={() =>
+                          handleAcceptGroup(
+                            group._id
+                          )
+                        }
+                        className="w-full sm:w-auto bg-[#fdbd00] hover:bg-[#efb000] disabled:bg-gray-200 disabled:text-gray-400 text-[#172033] px-8 py-3 rounded-xl font-extrabold transition shadow-sm"
+                      >
+
+                        {acceptingId ===
+                        group._id
+                          ? "Accepting..."
+                          : "Accept Group →"}
+
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          )}
+
+      </main>
+
     </div>
   );
 }
