@@ -41,49 +41,41 @@ app.use(
   })
 );
 
-// AUTH
 app.use(
   "/api/auth",
   require("./routes/authRoutes")
 );
 
-// USERS
 app.use(
   "/api/users",
   require("./routes/user.routes")
 );
 
-// PROTECTED
 app.use(
   "/api/protected",
   require("./routes/protectedRoutes")
 );
 
-// RIDE REQUESTS
 app.use(
   "/api/ride-requests",
   require("./routes/rideRequest.routes")
 );
 
-// ADMIN
 app.use(
   "/api/admin",
   require("./routes/admin.routes")
 );
 
-// DRIVERS
 app.use(
   "/api/drivers",
   require("./routes/driver.routes")
 );
 
-// ⭐ RIDE GROUPS
 app.use(
   "/api/ride-groups",
   require("./routes/rideGroup.routes.js")
 );
 
-// RABBITMQ TEST
 app.get("/test-rabbit", async (req, res) => {
   try {
     await sendMessage("ride_created", {
@@ -112,7 +104,6 @@ app.get("/test-rabbit", async (req, res) => {
   }
 });
 
-// 404
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -121,7 +112,6 @@ app.use((req, res) => {
   });
 });
 
-// ERROR HANDLER
 app.use((err, req, res, next) => {
   console.error("=================================");
   console.error("[ERROR]");

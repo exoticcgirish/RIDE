@@ -17,9 +17,6 @@ const {
   getAccepted,
 } = require("../controllers/rideGroup.controller");
 
-// ========================================
-// DRIVER PROFILE
-// ========================================
 
 router.get(
   "/profile",
@@ -35,9 +32,6 @@ router.put(
   updateProfile
 );
 
-// ========================================
-// DRIVER APPROVAL STATUS
-// ========================================
 
 router.get(
   "/status",
@@ -46,9 +40,6 @@ router.get(
   getApprovalStatus
 );
 
-// ========================================
-// AVAILABLE RIDE GROUPS
-// ========================================
 
 router.get(
   "/ride-groups",
@@ -57,9 +48,6 @@ router.get(
   getAvailable
 );
 
-// ========================================
-// ACCEPT RIDE GROUP
-// ========================================
 
 router.post(
   "/ride-groups/:groupId/accept",
@@ -68,9 +56,6 @@ router.post(
   accept
 );
 
-// ========================================
-// DRIVER'S ACCEPTED RIDE GROUPS
-// ========================================
 
 router.get(
   "/ride-groups/accepted",

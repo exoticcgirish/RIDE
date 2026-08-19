@@ -7,7 +7,6 @@ const useProfile = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch Logged-in User Profile
   const fetchProfile = async () => {
     try {
       setLoading(true);
@@ -23,7 +22,6 @@ const useProfile = () => {
     }
   };
 
-  // Update Profile
   const saveProfile = async (data) => {
     try {
       setLoading(true);

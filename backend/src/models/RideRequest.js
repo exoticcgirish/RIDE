@@ -61,7 +61,6 @@ const rideRequestSchema = new mongoose.Schema(
       default: "",
     },
 
-    // Ride grouping
     groupId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "RideGroup",

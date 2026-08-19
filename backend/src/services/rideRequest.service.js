@@ -9,15 +9,11 @@ const {
   sendMessage,
 } = require("../rabbitmq/producer.js");
 
-// =====================================================
-// CREATE RIDE REQUEST
-// =====================================================
 
 const createRideRequest = async (
   riderId,
   data
 ) => {
-  // Fallback mode
   if (dbFallback.isEnabled()) {
     return dbFallback.createRideRequest(
       riderId,
@@ -65,9 +61,6 @@ const createRideRequest = async (
     rideRequest._id.toString()
   );
 
-  // ---------------------------------------------------
-  // FIND / CREATE GROUP
-  // ---------------------------------------------------
 
   const group =
     await findOrCreateGroup(
@@ -79,9 +72,6 @@ const createRideRequest = async (
     group._id.toString()
   );
 
-  // ---------------------------------------------------
-  // RABBITMQ
-  // ---------------------------------------------------
 
   try {
     await sendMessage("group_created", {
@@ -126,7 +116,6 @@ const createRideRequest = async (
     );
   }
 
-  // Get latest ride request
   const updatedRideRequest =
     await RideRequest.findById(
       rideRequest._id
@@ -146,14 +135,10 @@ const createRideRequest = async (
   };
 };
 
-// =====================================================
-// GET MY RIDE REQUESTS
-// =====================================================
 
 const getMyRideRequests = async (
   riderId
 ) => {
-  // Fallback
   if (dbFallback.isEnabled()) {
     return dbFallback.getRideRequestsByRider(
       riderId
@@ -184,9 +169,6 @@ const getMyRideRequests = async (
   return requests;
 };
 
-// =====================================================
-// GET SINGLE RIDE REQUEST
-// =====================================================
 
 const getRideRequestById = async (
   id
@@ -216,9 +198,6 @@ const getRideRequestById = async (
     });
 };
 
-// =====================================================
-// UPDATE
-// =====================================================
 
 const updateRideRequest = async (
   id,
@@ -258,9 +237,6 @@ const updateRideRequest = async (
     .populate("groupId");
 };
 
-// =====================================================
-// CANCEL
-// =====================================================
 
 const cancelRideRequest = async (
   id,
@@ -289,9 +265,6 @@ const cancelRideRequest = async (
   );
 };
 
-// =====================================================
-// DELETE
-// =====================================================
 
 const deleteRideRequest = async (
   id,
@@ -314,9 +287,6 @@ const deleteRideRequest = async (
   );
 };
 
-// =====================================================
-// SEARCH
-// =====================================================
 
 const searchRideRequests = async (
   pickupLocation,
@@ -393,9 +363,6 @@ const searchRideRequests = async (
     });
 };
 
-// =====================================================
-// ASSIGN DRIVER
-// =====================================================
 
 const assignDriver = async (
   rideRequestId,

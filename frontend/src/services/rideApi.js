@@ -1,8 +1,5 @@
 import api from "./api";
 
-// ==========================================
-// CREATE RIDE
-// ==========================================
 
 export const createRideRequest = (data) => {
   return api.post(
@@ -11,9 +8,6 @@ export const createRideRequest = (data) => {
   );
 };
 
-// ==========================================
-// MY RIDES
-// ==========================================
 
 export const getMyRideRequests = () => {
   return api.get(
@@ -21,9 +15,6 @@ export const getMyRideRequests = () => {
   );
 };
 
-// ==========================================
-// SINGLE RIDE
-// ==========================================
 
 export const getRideRequestById = (
   id
@@ -33,9 +24,6 @@ export const getRideRequestById = (
   );
 };
 
-// ==========================================
-// UPDATE
-// ==========================================
 
 export const updateRideRequest = (
   id,
@@ -47,9 +35,6 @@ export const updateRideRequest = (
   );
 };
 
-// ==========================================
-// CANCEL
-// ==========================================
 
 export const cancelRideRequest = (
   id
@@ -59,9 +44,6 @@ export const cancelRideRequest = (
   );
 };
 
-// ==========================================
-// DELETE
-// ==========================================
 
 export const deleteRideRequest = (
   id
@@ -71,9 +53,6 @@ export const deleteRideRequest = (
   );
 };
 
-// ==========================================
-// SEARCH
-// ==========================================
 
 export const searchRideRequests = (
   params
@@ -86,9 +65,6 @@ export const searchRideRequests = (
   );
 };
 
-// ==========================================
-// ACCEPT SINGLE RIDE
-// ==========================================
 
 export const acceptRideRequest = (
   id,
