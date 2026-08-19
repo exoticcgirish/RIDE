@@ -1,7 +1,7 @@
 const RideRequest = require("../models/RideRequest.js");
 const dbFallback = require("../dbFallback.js");
 
-const { findOrCreateGroup } = require("./grouping.service.js");
+const { findOrCreateGroup } = require("./rideGroup.service.js");
 
 const { sendMessage } = require("../rabbitmq/producer.js");
 

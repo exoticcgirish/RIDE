@@ -17,11 +17,17 @@ function MyRideRequests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadRequests = async () => {
+  const loadRequests = async (showLoader = false) => {
     try {
-      setLoading(true);
+      if (showLoader) {
+        setLoading(true);
+      }
+
       setError("");
+
       const res = await getMyRideRequests();
+
+      console.log("🚗 UPDATED RIDE DATA:", res.data);
 
       setRequests(
         res.data?.data ||
@@ -31,17 +37,25 @@ function MyRideRequests() {
           [],
       );
     } catch (err) {
-      console.error(err);
+      console.error("❌ Load requests failed:", err);
+
       setError(
         err.response?.data?.message || "Failed to load your ride requests.",
       );
     } finally {
-      setLoading(false);
+      if (showLoader) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    loadRequests();
+    loadRequests(true);
+    const interval = setInterval(() => {
+      loadRequests(false);
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, []);
   const handleEdit = async (id) => {
     const confirmed = window.alert("this is not currently available");
@@ -155,9 +169,9 @@ function MyRideRequests() {
               <RideRequestCard
                 key={request._id || request.id}
                 request={request}
-                onEdit={() =>
-                  navigate(`/ride-requests/edit/${request._id || request.id}`)
-                }
+                // onEdit={() =>
+                //   navigate(`/ride-requests/edit/${request._id || request.id}`)
+                // }
                 onEdit={handleEdit}
                 onCancel={handleCancel}
                 onDelete={handleDelete}

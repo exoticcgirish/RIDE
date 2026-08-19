@@ -24,7 +24,6 @@ const isSameTime = (time1, time2) => {
   return time1 === time2;
 };
 
-
 // ==========================================
 // FIND OR CREATE GROUP
 // ==========================================
@@ -36,22 +35,15 @@ const findOrCreateGroup = async (rideRequestId) => {
     throw new Error("Ride request not found");
   }
 
-  const seatsRequired =
-    Number(rideRequest.seatsRequired) || 1;
+  const seatsRequired = Number(rideRequest.seatsRequired) || 1;
 
   if (seatsRequired > MAX_SEATS) {
-    throw new Error(
-      `Maximum group capacity is ${MAX_SEATS} seats`
-    );
+    throw new Error(`Maximum group capacity is ${MAX_SEATS} seats`);
   }
 
-  const pickup = normalize(
-    rideRequest.pickupLocation
-  );
+  const pickup = normalize(rideRequest.pickupLocation);
 
-  const destination = normalize(
-    rideRequest.destination
-  );
+  const destination = normalize(rideRequest.destination);
 
   // ------------------------------------------
   // FIND WAITING GROUP
@@ -65,35 +57,25 @@ const findOrCreateGroup = async (rideRequestId) => {
   let group = null;
 
   for (const existingGroup of groups) {
-    const samePickup =
-      normalize(existingGroup.pickupLocation) ===
-      pickup;
+    const samePickup = normalize(existingGroup.pickupLocation) === pickup;
 
     const sameDestination =
-      normalize(existingGroup.destination) ===
-      destination;
+      normalize(existingGroup.destination) === destination;
 
     const sameDate = isSameDate(
       existingGroup.departureDate,
-      rideRequest.departureDate
+      rideRequest.departureDate,
     );
 
     const sameTime = isSameTime(
       existingGroup.departureTime,
-      rideRequest.departureTime
+      rideRequest.departureTime,
     );
 
     const enoughSpace =
-      existingGroup.totalSeats + seatsRequired <=
-      existingGroup.maxSeats;
+      existingGroup.totalSeats + seatsRequired <= existingGroup.maxSeats;
 
-    if (
-      samePickup &&
-      sameDestination &&
-      sameDate &&
-      sameTime &&
-      enoughSpace
-    ) {
+    if (samePickup && sameDestination && sameDate && sameTime && enoughSpace) {
       group = existingGroup;
       break;
     }
@@ -107,41 +89,30 @@ const findOrCreateGroup = async (rideRequestId) => {
     group = await RideGroup.create({
       members: [rideRequest._id],
 
-      pickupLocation:
-        rideRequest.pickupLocation,
+      pickupLocation: rideRequest.pickupLocation,
 
-      destination:
-        rideRequest.destination,
+      destination: rideRequest.destination,
 
-      departureDate:
-        rideRequest.departureDate,
+      departureDate: rideRequest.departureDate,
 
-      departureTime:
-        rideRequest.departureTime,
+      departureTime: rideRequest.departureTime,
 
       totalSeats: seatsRequired,
 
       maxSeats: MAX_SEATS,
 
-      status:
-        seatsRequired >= MAX_SEATS
-          ? "ready"
-          : "waiting",
+      status: seatsRequired >= MAX_SEATS ? "ready" : "waiting",
 
       assignedDriver: null,
     });
   } else {
-
     // ----------------------------------------
     // ADD RIDER TO EXISTING GROUP
     // ----------------------------------------
 
-    const alreadyMember =
-      group.members.some(
-        (memberId) =>
-          memberId.toString() ===
-          rideRequest._id.toString()
-      );
+    const alreadyMember = group.members.some(
+      (memberId) => memberId.toString() === rideRequest._id.toString(),
+    );
 
     if (!alreadyMember) {
       group.members.push(rideRequest._id);
@@ -158,24 +129,26 @@ const findOrCreateGroup = async (rideRequestId) => {
   }
 
   // ------------------------------------------
-  // UPDATE RIDE REQUEST
+  // UPDATE ALL RIDE REQUESTS IN GROUP
   // ------------------------------------------
 
-  await RideRequest.findByIdAndUpdate(
-    rideRequest._id,
+  await RideRequest.updateMany(
     {
-      groupId: group._id,
+      _id: {
+        $in: group.members,
+      },
+    },
+    {
+      $set: {
+        groupId: group._id,
 
-      status:
-        group.status === "ready"
-          ? "grouped"
-          : "waiting",
-    }
+        status: group.status === "ready" ? "grouped" : "waiting",
+      },
+    },
   );
 
   return group;
 };
-
 
 // ==========================================
 // GET AVAILABLE GROUPS
@@ -190,8 +163,7 @@ const getAvailableGroups = async () => {
       path: "members",
       populate: {
         path: "rider",
-        select:
-          "full_name name email phone college",
+        select: "full_name name email phone college",
       },
     })
     .sort({
@@ -199,7 +171,6 @@ const getAvailableGroups = async () => {
       departureTime: 1,
     });
 };
-
 
 // ==========================================
 // GET GROUP FOR RIDER
@@ -228,12 +199,10 @@ const getGroupForRider = async (riderId) => {
       path: "members",
       populate: {
         path: "rider",
-        select:
-          "full_name name email phone college",
+        select: "full_name name email phone college",
       },
     });
 };
-
 
 // ==========================================
 // ACCEPT GROUP
@@ -254,7 +223,7 @@ const acceptGroup = async (groupId, driverId) => {
     },
     {
       new: true,
-    }
+    },
   )
     .populate({
       path: "assignedDriver",
@@ -265,24 +234,19 @@ const acceptGroup = async (groupId, driverId) => {
       path: "members",
       populate: {
         path: "rider",
-        select:
-          "full_name name email phone college",
+        select: "full_name name email phone college",
       },
     });
 
   if (!group) {
-    throw new Error(
-      "Ride group is already accepted or does not exist."
-    );
+    throw new Error("Ride group is already accepted or does not exist.");
   }
 
   // Update every ride request in group
   await RideRequest.updateMany(
     {
       _id: {
-        $in: group.members.map(
-          (member) => member._id
-        ),
+        $in: group.members.map((member) => member._id),
       },
     },
     {
@@ -290,12 +254,11 @@ const acceptGroup = async (groupId, driverId) => {
         status: "accepted",
         assignedDriver: driverId,
       },
-    }
+    },
   );
 
   return group;
 };
-
 
 module.exports = {
   findOrCreateGroup,
