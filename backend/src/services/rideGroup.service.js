@@ -10,9 +10,9 @@ const RIDER_FIELDS =
   "full_name name email phone college";
 
 const normalize = (value) => {
-  return value
-    ? String(value).trim().toLowerCase()
-    : "";
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 };
 
 const isSameDate = (date1, date2) => {
@@ -23,6 +23,13 @@ const isSameDate = (date1, date2) => {
   const first = new Date(date1);
   const second = new Date(date2);
 
+  if (
+    Number.isNaN(first.getTime()) ||
+    Number.isNaN(second.getTime())
+  ) {
+    return false;
+  }
+
   return (
     first.getFullYear() === second.getFullYear() &&
     first.getMonth() === second.getMonth() &&
@@ -31,7 +38,10 @@ const isSameDate = (date1, date2) => {
 };
 
 const isSameTime = (time1, time2) => {
-  return String(time1 || "") === String(time2 || "");
+  return (
+    String(time1 || "").trim() ===
+    String(time2 || "").trim()
+  );
 };
 
 const populateGroup = (query) => {
@@ -49,6 +59,48 @@ const populateGroup = (query) => {
     });
 };
 
+const findExactSeatCombination = (
+  requests,
+  targetSeats
+) => {
+  const result = [];
+
+  const findCombination = (index, total) => {
+    if (total === targetSeats) {
+      return true;
+    }
+
+    if (total > targetSeats) {
+      return false;
+    }
+
+    for (let i = index; i < requests.length; i++) {
+      const seats =
+        Number(requests[i].seatsRequired) || 1;
+
+      if (
+        findCombination(
+          i + 1,
+          total + seats
+        )
+      ) {
+        result.push(requests[i]);
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const found = findCombination(0, 0);
+
+  if (!found) {
+    return null;
+  }
+
+  return result.reverse();
+};
+
 const findOrCreateGroup = async (
   rideRequestInput
 ) => {
@@ -59,7 +111,10 @@ const findOrCreateGroup = async (
     typeof rideRequestInput === "object" &&
     rideRequestInput._id
   ) {
-    rideRequest = rideRequestInput;
+    rideRequest =
+      await RideRequest.findById(
+        rideRequestInput._id
+      );
   } else {
     rideRequest =
       await RideRequest.findById(
@@ -73,154 +128,187 @@ const findOrCreateGroup = async (
     );
   }
 
+  if (rideRequest.groupId) {
+    return populateGroup(
+      RideGroup.findById(
+        rideRequest.groupId
+      )
+    );
+  }
+
+  const pickupLocation = String(
+    rideRequest.pickupLocation || ""
+  ).trim();
+
+  const destination = String(
+    rideRequest.destination || ""
+  ).trim();
+
+  const departureDate =
+    rideRequest.departureDate;
+
+  const departureTime = String(
+    rideRequest.departureTime || ""
+  ).trim();
+
   const seatsRequired =
-    Number(rideRequest.seatsRequired) || 1;
+    Number(
+      rideRequest.seatsRequired
+    ) || 1;
 
-  if (seatsRequired > MAX_SEATS) {
+  if (!pickupLocation) {
     throw new Error(
-      `Maximum group capacity is ${MAX_SEATS} seats`
+      "pickupLocation is required"
     );
   }
 
-  if (seatsRequired <= 0) {
+  if (!destination) {
     throw new Error(
-      "Seats required must be at least 1"
+      "destination is required"
     );
   }
 
-  const pickup = normalize(
-    rideRequest.pickupLocation
-  );
+  if (!departureDate) {
+    throw new Error(
+      "departureDate is required"
+    );
+  }
 
-  const destination = normalize(
-    rideRequest.destination
-  );
+  if (!departureTime) {
+    throw new Error(
+      "departureTime is required"
+    );
+  }
 
-  const groups = await RideGroup.find({
-    status: "waiting",
-    $or: [
-      {
-        assignedDriver: null,
-      },
-      {
-        assignedDriver: {
-          $exists: false,
+  if (
+    seatsRequired < 1 ||
+    seatsRequired > MAX_SEATS
+  ) {
+    throw new Error(
+      `Seats required must be between 1 and ${MAX_SEATS}`
+    );
+  }
+
+  const pickup =
+    normalize(pickupLocation);
+
+  const destinationNormalized =
+    normalize(destination);
+
+  const waitingRequests =
+    await RideRequest.find({
+      status: "waiting",
+      $or: [
+        {
+          groupId: null,
         },
-      },
-    ],
-  });
+        {
+          groupId: {
+            $exists: false,
+          },
+        },
+      ],
+    }).sort({
+      createdAt: 1,
+    });
 
-  let group = null;
+  const compatibleRequests =
+    waitingRequests.filter(
+      (request) => {
+        const samePickup =
+          normalize(
+            request.pickupLocation
+          ) === pickup;
 
-  for (const existingGroup of groups) {
-    const samePickup =
-      normalize(
-        existingGroup.pickupLocation
-      ) === pickup;
+        const sameDestination =
+          normalize(
+            request.destination
+          ) === destinationNormalized;
 
-    const sameDestination =
-      normalize(
-        existingGroup.destination
-      ) === destination;
+        const sameDate =
+          isSameDate(
+            request.departureDate,
+            departureDate
+          );
 
-    const sameDate = isSameDate(
-      existingGroup.departureDate,
-      rideRequest.departureDate
+        const sameTime =
+          isSameTime(
+            request.departureTime,
+            departureTime
+          );
+
+        const seats =
+          Number(
+            request.seatsRequired
+          ) || 1;
+
+        return (
+          samePickup &&
+          sameDestination &&
+          sameDate &&
+          sameTime &&
+          seats <= MAX_SEATS
+        );
+      }
     );
 
-    const sameTime = isSameTime(
-      existingGroup.departureTime,
-      rideRequest.departureTime
+  const combination =
+    findExactSeatCombination(
+      compatibleRequests,
+      MAX_SEATS
     );
 
-    const currentSeats =
-      Number(existingGroup.totalSeats) || 0;
-
-    const maxSeats =
-      Number(existingGroup.maxSeats) ||
-      MAX_SEATS;
-
-    const enoughSpace =
-      currentSeats + seatsRequired <=
-      maxSeats;
-
-    if (
-      samePickup &&
-      sameDestination &&
-      sameDate &&
-      sameTime &&
-      enoughSpace
-    ) {
-      group = existingGroup;
-      break;
-    }
+  if (!combination) {
+    return null;
   }
 
-  if (!group) {
-    group = await RideGroup.create({
-      members: [rideRequest._id],
+  const memberIds =
+    combination.map(
+      (request) => request._id
+    );
 
-      pickupLocation:
-        rideRequest.pickupLocation,
+  const totalSeats =
+    combination.reduce(
+      (total, request) => {
+        return (
+          total +
+          (Number(
+            request.seatsRequired
+          ) || 1)
+        );
+      },
+      0
+    );
 
-      destination:
-        rideRequest.destination,
+  if (totalSeats !== MAX_SEATS) {
+    return null;
+  }
 
-      departureDate:
-        rideRequest.departureDate,
+  const group =
+    await RideGroup.create({
+      members: memberIds,
 
-      departureTime:
-        rideRequest.departureTime,
+      pickupLocation,
 
-      totalSeats: seatsRequired,
+      destination,
+
+      departureDate,
+
+      departureTime,
+
+      totalSeats: MAX_SEATS,
 
       maxSeats: MAX_SEATS,
 
-      status:
-        seatsRequired >= MAX_SEATS
-          ? "ready"
-          : "waiting",
+      status: "ready",
 
       assignedDriver: null,
     });
-  } else {
-    const alreadyMember =
-      group.members.some(
-        (memberId) =>
-          String(memberId) ===
-          String(rideRequest._id)
-      );
-
-    if (!alreadyMember) {
-      group.members.push(
-        rideRequest._id
-      );
-
-      group.totalSeats =
-        (Number(group.totalSeats) || 0) +
-        seatsRequired;
-    }
-
-    const totalSeats =
-      Number(group.totalSeats) || 0;
-
-    const maxSeats =
-      Number(group.maxSeats) ||
-      MAX_SEATS;
-
-    if (totalSeats >= maxSeats) {
-      group.status = "ready";
-    } else {
-      group.status = "waiting";
-    }
-
-    await group.save();
-  }
 
   await RideRequest.updateMany(
     {
       _id: {
-        $in: group.members,
+        $in: memberIds,
       },
     },
     {
@@ -231,68 +319,69 @@ const findOrCreateGroup = async (
     }
   );
 
-  return await populateGroup(
-    RideGroup.findById(group._id)
+  return populateGroup(
+    RideGroup.findById(
+      group._id
+    )
   );
 };
 
-const getAvailableGroups = async () => {
-  return await populateGroup(
-    RideGroup.find({
-      status: "ready",
-      $or: [
-        {
-          assignedDriver: null,
-        },
-        {
-          assignedDriver: {
-            $exists: false,
+const getAvailableGroups =
+  async () => {
+    return populateGroup(
+      RideGroup.find({
+        status: "ready",
+
+        $or: [
+          {
+            assignedDriver: null,
           },
-        },
-      ],
-    }).sort({
-      departureDate: 1,
-      departureTime: 1,
-    })
-  );
-};
-
-const getGroupForRider = async (
-  riderId
-) => {
-  const rideRequest =
-    await RideRequest.findOne({
-      rider: riderId,
-    })
-      .sort({
-        createdAt: -1,
+          {
+            assignedDriver: {
+              $exists: false,
+            },
+          },
+        ],
+      }).sort({
+        departureDate: 1,
+        departureTime: 1,
       })
-      .select("_id groupId");
+    );
+  };
 
-  if (!rideRequest) {
-    return null;
-  }
+const getGroupForRider =
+  async (riderId) => {
+    if (!riderId) {
+      throw new Error(
+        "Rider ID is required"
+      );
+    }
 
-  let group = null;
+    const rideRequest =
+      await RideRequest.findOne({
+        rider: riderId,
+      })
+        .sort({
+          createdAt: -1,
+        })
+        .select(
+          "_id groupId status"
+        );
 
-  if (rideRequest.groupId) {
-    group = await populateGroup(
+    if (!rideRequest) {
+      return null;
+    }
+
+    if (!rideRequest.groupId) {
+      return null;
+    }
+
+    return populateGroup(
       RideGroup.findById(
         rideRequest.groupId
       )
     );
-  }
-
-  if (!group) {
-    group = await populateGroup(
-      RideGroup.findOne({
-        members: rideRequest._id,
-      })
-    );
-  }
-
-  return group;
-};
+  };
 
 const acceptGroup = async (
   groupId,
@@ -314,7 +403,9 @@ const acceptGroup = async (
     await RideGroup.findOneAndUpdate(
       {
         _id: groupId,
+
         status: "ready",
+
         $or: [
           {
             assignedDriver: null,
@@ -358,8 +449,10 @@ const acceptGroup = async (
     }
   );
 
-  return await populateGroup(
-    RideGroup.findById(group._id)
+  return populateGroup(
+    RideGroup.findById(
+      group._id
+    )
   );
 };
 
@@ -371,7 +464,7 @@ const getAcceptedGroupsForDriver =
       );
     }
 
-    return await populateGroup(
+    return populateGroup(
       RideGroup.find({
         assignedDriver: driverId,
         status: "accepted",
