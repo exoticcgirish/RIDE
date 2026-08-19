@@ -2,30 +2,37 @@ const express = require("express");
 
 const router = express.Router();
 
-const authMiddleware = require("../middleware/authMiddleware.js");
-
 const {
-  getAvailableGroups,
-  acceptGroup,
-  getGroupForRider,
+  getAvailable,
+  getMine,
+  accept,
+  getAccepted,
 } = require("../controllers/rideGroup.controller.js");
+
+const authMiddleware = require("../middleware/authMiddleware.js");
 
 router.get(
   "/available",
   authMiddleware,
-  getAvailableGroups
-);
-
-router.post(
-  "/:id/accept",
-  authMiddleware,
-  acceptGroup
+  getAvailable
 );
 
 router.get(
-  "/my-group",
+  "/mine",
   authMiddleware,
-  getGroupForRider
+  getMine
+);
+
+router.get(
+  "/accepted",
+  authMiddleware,
+  getAccepted
+);
+
+router.patch(
+  "/:groupId/accept",
+  authMiddleware,
+  accept
 );
 
 module.exports = router;

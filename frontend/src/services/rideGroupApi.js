@@ -1,20 +1,17 @@
-import axios from "axios";
+import api from "./api";
 
-const API = axios.create({
-  baseURL: "http://localhost:7001/api",
-  withCredentials: true,
-});
+export const getAvailableGroups = () => {
+  return api.get("/ride-groups/available");
+};
 
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+export const acceptGroup = (groupId) => {
+  return api.post(`/ride-groups/${groupId}/accept`);
+};
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
+export const getMyAcceptedGroups = () => {
+  return api.get("/ride-groups/accepted");
+};
 
 export const getMyRideGroup = () => {
-  return API.get("/ride-groups/my-group");
+  return api.get("/ride-groups/mine");
 };

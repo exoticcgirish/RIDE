@@ -1,32 +1,101 @@
 import api from "./api";
 
+// ==========================================
+// CREATE RIDE
+// ==========================================
+
 export const createRideRequest = (data) => {
-  return api.post("/ride-requests", data);
+  return api.post(
+    "/ride-requests",
+    data
+  );
 };
+
+// ==========================================
+// MY RIDES
+// ==========================================
+
 export const getMyRideRequests = () => {
-  return api.get("/ride-requests/my");
-};
-export const getRideRequestById = (id) => {
-  return api.get(`/ride-requests/${id}`);
-};
-export const updateRideRequest = (id, data) => {
-  return api.put(`/ride-requests/${id}`, data);
+  return api.get(
+    "/ride-requests/my"
+  );
 };
 
-export const cancelRideRequest = (id) => {
-  return api.patch(`/ride-requests/${id}/cancel`);
+// ==========================================
+// SINGLE RIDE
+// ==========================================
+
+export const getRideRequestById = (
+  id
+) => {
+  return api.get(
+    `/ride-requests/${id}`
+  );
 };
 
-export const deleteRideRequest = (id) => {
-  return api.delete(`/ride-requests/${id}`);
+// ==========================================
+// UPDATE
+// ==========================================
+
+export const updateRideRequest = (
+  id,
+  data
+) => {
+  return api.put(
+    `/ride-requests/${id}`,
+    data
+  );
 };
 
-export const searchRideRequests = (params) => {
-  return api.get("/ride-requests/search/list", {
-    params,
-  });
+// ==========================================
+// CANCEL
+// ==========================================
+
+export const cancelRideRequest = (
+  id
+) => {
+  return api.patch(
+    `/ride-requests/${id}/cancel`
+  );
 };
 
-export const acceptRideRequest = (id, data) => {
-  return api.patch(`/ride-requests/${id}/accept`, data);
+// ==========================================
+// DELETE
+// ==========================================
+
+export const deleteRideRequest = (
+  id
+) => {
+  return api.delete(
+    `/ride-requests/${id}`
+  );
+};
+
+// ==========================================
+// SEARCH
+// ==========================================
+
+export const searchRideRequests = (
+  params
+) => {
+  return api.get(
+    "/ride-requests/search/list",
+    {
+      params,
+    }
+  );
+};
+
+// ==========================================
+// ACCEPT SINGLE RIDE
+// ==========================================
+
+export const acceptRideRequest = (
+  id,
+  data
+) => {
+  return api.patch(
+    `/ride-requests/${id}/accept`,
+    data
+  );
 };

@@ -1,96 +1,235 @@
 const RideRequest = require("../models/RideRequest.js");
 const dbFallback = require("../dbFallback.js");
 
-const { findOrCreateGroup } = require("./rideGroup.service.js");
+const {
+  findOrCreateGroup,
+} = require("./rideGroup.service.js");
 
-const { sendMessage } = require("../rabbitmq/producer.js");
+const {
+  sendMessage,
+} = require("../rabbitmq/producer.js");
 
-const createRideRequest = async (riderId, data) => {
+// =====================================================
+// CREATE RIDE REQUEST
+// =====================================================
+
+const createRideRequest = async (
+  riderId,
+  data
+) => {
   // Fallback mode
   if (dbFallback.isEnabled()) {
-    return dbFallback.createRideRequest(riderId, data);
+    return dbFallback.createRideRequest(
+      riderId,
+      data
+    );
   }
-  const rideRequest = await RideRequest.create({
-    rider: riderId,
 
-    pickupLocation: data.pickupLocation,
+  const rideRequest =
+    await RideRequest.create({
+      rider: riderId,
 
-    destination: data.destination,
+      pickupLocation:
+        data.pickupLocation,
 
-    pickupCoordinates: data.pickupCoordinates,
+      destination:
+        data.destination,
 
-    destinationCoordinates: data.destinationCoordinates,
+      pickupCoordinates:
+        data.pickupCoordinates,
 
-    departureDate: data.departureDate,
+      destinationCoordinates:
+        data.destinationCoordinates,
 
-    departureTime: data.departureTime,
+      departureDate:
+        data.departureDate,
 
-    seatsRequired: data.seatsRequired || 1,
+      departureTime:
+        data.departureTime,
 
-    notes: data.notes || "",
-  });
+      seatsRequired:
+        data.seatsRequired || 1,
 
-  console.log("Saved Ride:", rideRequest._id.toString());
-  const group = await findOrCreateGroup(rideRequest);
+      notes:
+        data.notes || "",
 
-  console.log("Ride added to group:", group._id.toString());
-  try {
-    await sendMessage("group_created", {
-      groupId: group._id.toString(),
+      status: "waiting",
 
-      rideRequestId: rideRequest._id.toString(),
+      assignedDriver: null,
 
-      riderId: riderId.toString(),
-
-      pickupLocation: group.pickupLocation,
-
-      destination: group.destination,
-
-      departureDate: group.departureDate,
-
-      departureTime: group.departureTime,
-
-      totalSeats: group.totalSeats,
-
-      maxSeats: group.maxSeats,
-
-      status: group.status,
+      trip: null,
     });
 
-    console.log("RabbitMQ group event sent.");
+  console.log(
+    "Saved Ride:",
+    rideRequest._id.toString()
+  );
+
+  // ---------------------------------------------------
+  // FIND / CREATE GROUP
+  // ---------------------------------------------------
+
+  const group =
+    await findOrCreateGroup(
+      rideRequest._id
+    );
+
+  console.log(
+    "Ride added to group:",
+    group._id.toString()
+  );
+
+  // ---------------------------------------------------
+  // RABBITMQ
+  // ---------------------------------------------------
+
+  try {
+    await sendMessage("group_created", {
+      groupId:
+        group._id.toString(),
+
+      rideRequestId:
+        rideRequest._id.toString(),
+
+      riderId:
+        riderId.toString(),
+
+      pickupLocation:
+        group.pickupLocation,
+
+      destination:
+        group.destination,
+
+      departureDate:
+        group.departureDate,
+
+      departureTime:
+        group.departureTime,
+
+      totalSeats:
+        group.totalSeats,
+
+      maxSeats:
+        group.maxSeats,
+
+      status:
+        group.status,
+    });
+
+    console.log(
+      "RabbitMQ group event sent."
+    );
   } catch (rabbitError) {
-    console.error("RabbitMQ group event failed:", rabbitError.message);
+    console.error(
+      "RabbitMQ group event failed:",
+      rabbitError.message
+    );
   }
+
+  // Get latest ride request
+  const updatedRideRequest =
+    await RideRequest.findById(
+      rideRequest._id
+    )
+      .populate({
+        path: "assignedDriver",
+        select:
+          "full_name name email phone vehicleType vehicleNumber vehicleModel vehicleColor",
+      })
+      .populate("groupId");
+
   return {
-    rideRequest,
+    rideRequest:
+      updatedRideRequest,
+
     group,
   };
 };
-const getMyRideRequests = async (riderId) => {
+
+// =====================================================
+// GET MY RIDE REQUESTS
+// =====================================================
+
+const getMyRideRequests = async (
+  riderId
+) => {
+  // Fallback
   if (dbFallback.isEnabled()) {
-    return dbFallback.getRideRequestsByRider(riderId);
+    return dbFallback.getRideRequestsByRider(
+      riderId
+    );
   }
 
-  return await RideRequest.find({ rider: riderId })
-    .populate(
-      "assignedDriver",
-      "full_name phone email vehicleType vehicleNumber vehicleModel vehicleColor",
-    )
-    .sort({ createdAt: -1 });
+  const requests =
+    await RideRequest.find({
+      rider: riderId,
+    })
+      .populate({
+        path: "assignedDriver",
+        select:
+          "full_name name email phone vehicleType vehicleNumber vehicleModel vehicleColor",
+      })
+      .populate({
+        path: "groupId",
+        populate: {
+          path: "assignedDriver",
+          select:
+            "full_name name email phone vehicleType vehicleNumber vehicleModel vehicleColor",
+        },
+      })
+      .sort({
+        createdAt: -1,
+      });
+
+  return requests;
 };
-const getRideRequestById = async (id) => {
+
+// =====================================================
+// GET SINGLE RIDE REQUEST
+// =====================================================
+
+const getRideRequestById = async (
+  id
+) => {
   if (dbFallback.isEnabled()) {
     return dbFallback.getRideRequestById(id);
   }
+
   return await RideRequest.findById(id)
-    .populate("rider", "name full_name email phone college")
-    .populate("assignedDriver", "name full_name phone")
+    .populate(
+      "rider",
+      "name full_name email phone college"
+    )
+    .populate({
+      path: "assignedDriver",
+      select:
+        "name full_name email phone vehicleType vehicleNumber vehicleModel vehicleColor",
+    })
     .populate("trip")
-    .populate("groupId");
+    .populate({
+      path: "groupId",
+      populate: {
+        path: "assignedDriver",
+        select:
+          "name full_name email phone vehicleType vehicleNumber vehicleModel vehicleColor",
+      },
+    });
 };
-const updateRideRequest = async (id, data, riderId = null) => {
+
+// =====================================================
+// UPDATE
+// =====================================================
+
+const updateRideRequest = async (
+  id,
+  data,
+  riderId = null
+) => {
   if (dbFallback.isEnabled()) {
-    return dbFallback.updateRideRequest(id, data);
+    return dbFallback.updateRideRequest(
+      id,
+      data
+    );
   }
 
   const query = {
@@ -109,11 +248,24 @@ const updateRideRequest = async (id, data, riderId = null) => {
     {
       new: true,
       runValidators: true,
-    },
-  );
+    }
+  )
+    .populate({
+      path: "assignedDriver",
+      select:
+        "name full_name email phone vehicleType vehicleNumber vehicleModel vehicleColor",
+    })
+    .populate("groupId");
 };
 
-const cancelRideRequest = async (id, riderId = null) => {
+// =====================================================
+// CANCEL
+// =====================================================
+
+const cancelRideRequest = async (
+  id,
+  riderId = null
+) => {
   if (dbFallback.isEnabled()) {
     return dbFallback.cancelRideRequest(id);
   }
@@ -133,11 +285,18 @@ const cancelRideRequest = async (id, riderId = null) => {
     },
     {
       new: true,
-    },
+    }
   );
 };
 
-const deleteRideRequest = async (id, riderId = null) => {
+// =====================================================
+// DELETE
+// =====================================================
+
+const deleteRideRequest = async (
+  id,
+  riderId = null
+) => {
   if (dbFallback.isEnabled()) {
     return dbFallback.deleteRideRequest(id);
   }
@@ -150,13 +309,19 @@ const deleteRideRequest = async (id, riderId = null) => {
     query.rider = riderId;
   }
 
-  return await RideRequest.findOneAndDelete(query);
+  return await RideRequest.findOneAndDelete(
+    query
+  );
 };
+
+// =====================================================
+// SEARCH
+// =====================================================
 
 const searchRideRequests = async (
   pickupLocation,
   destination,
-  departureDate,
+  departureDate
 ) => {
   if (dbFallback.isEnabled()) {
     return dbFallback.searchRideRequests({
@@ -185,13 +350,25 @@ const searchRideRequests = async (
   }
 
   if (departureDate) {
-    const startOfDay = new Date(departureDate);
+    const startOfDay =
+      new Date(departureDate);
 
-    startOfDay.setHours(0, 0, 0, 0);
+    startOfDay.setHours(
+      0,
+      0,
+      0,
+      0
+    );
 
-    const endOfDay = new Date(departureDate);
+    const endOfDay =
+      new Date(departureDate);
 
-    endOfDay.setHours(23, 59, 59, 999);
+    endOfDay.setHours(
+      23,
+      59,
+      59,
+      999
+    );
 
     query.departureDate = {
       $gte: startOfDay,
@@ -200,7 +377,15 @@ const searchRideRequests = async (
   }
 
   return await RideRequest.find(query)
-    .populate("rider", "name full_name phone")
+    .populate(
+      "rider",
+      "name full_name phone"
+    )
+    .populate({
+      path: "assignedDriver",
+      select:
+        "name full_name email phone vehicleType vehicleNumber vehicleModel vehicleColor",
+    })
     .populate("groupId")
     .sort({
       departureDate: 1,
@@ -208,26 +393,45 @@ const searchRideRequests = async (
     });
 };
 
-const assignDriver = async (rideRequestId, driverId, tripId = null) => {
+// =====================================================
+// ASSIGN DRIVER
+// =====================================================
+
+const assignDriver = async (
+  rideRequestId,
+  driverId,
+  tripId = null
+) => {
   if (dbFallback.isEnabled()) {
-    return dbFallback.assignDriver(rideRequestId, driverId, tripId);
+    return dbFallback.assignDriver(
+      rideRequestId,
+      driverId,
+      tripId
+    );
   }
 
-  const rideRequest = await RideRequest.findByIdAndUpdate(
-    rideRequestId,
-    {
-      assignedDriver: driverId,
+  const rideRequest =
+    await RideRequest.findByIdAndUpdate(
+      rideRequestId,
+      {
+        assignedDriver: driverId,
 
-      ...(tripId && {
-        trip: tripId,
-      }),
+        ...(tripId && {
+          trip: tripId,
+        }),
 
-      status: "accepted",
-    },
-    {
-      new: true,
-    },
-  );
+        status: "accepted",
+      },
+      {
+        new: true,
+      }
+    )
+      .populate({
+        path: "assignedDriver",
+        select:
+          "name full_name email phone vehicleType vehicleNumber vehicleModel vehicleColor",
+      })
+      .populate("groupId");
 
   return rideRequest;
 };
@@ -249,5 +453,6 @@ module.exports = {
 
   assignDriver,
 
-  acceptRideRequest: assignDriver,
+  acceptRideRequest:
+    assignDriver,
 };

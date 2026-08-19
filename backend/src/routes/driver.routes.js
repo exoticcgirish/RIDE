@@ -12,8 +12,9 @@ const {
 } = require("../controllers/driver.controller");
 
 const {
-  getAvailableGroups,
-  acceptGroup,
+  getAvailable,
+  accept,
+  getAccepted,
 } = require("../controllers/rideGroup.controller");
 
 // ========================================
@@ -53,7 +54,7 @@ router.get(
   "/ride-groups",
   authMiddleware,
   roleMiddleware("driver"),
-  getAvailableGroups
+  getAvailable
 );
 
 // ========================================
@@ -61,10 +62,21 @@ router.get(
 // ========================================
 
 router.post(
-  "/ride-groups/:id/accept",
+  "/ride-groups/:groupId/accept",
   authMiddleware,
   roleMiddleware("driver"),
-  acceptGroup
+  accept
+);
+
+// ========================================
+// DRIVER'S ACCEPTED RIDE GROUPS
+// ========================================
+
+router.get(
+  "/ride-groups/accepted",
+  authMiddleware,
+  roleMiddleware("driver"),
+  getAccepted
 );
 
 module.exports = router;

@@ -27,22 +27,54 @@ const findUserByEmail = async (email) => {
 
   return null;
 };
+const findUserById = async (userId) => {
+  for (const role of Object.keys(users)) {
+    const user = users[role].find((item) => item._id === userId);
 
-const createUser = async ({ name, email, password, role }) => {
+    if (user) return user;
+  }
+
+  return null;
+};
+
+const createUser = async ({
+  name,
+  email,
+  password,
+  role,
+  phone,
+  vehicleType,
+  vehicleNumber,
+  vehicleModel,
+  vehicleColor,
+}) => {
   const selectedRole = ["rider", "driver", "admin"].includes(role)
     ? role
     : "rider";
 
   const user = {
     _id: randomUUID(),
+
     name,
     email,
     password,
     role: selectedRole,
+
+    phone: phone || null,
+
+    vehicleType: selectedRole === "driver" ? vehicleType || null : null,
+
+    vehicleNumber: selectedRole === "driver" ? vehicleNumber || null : null,
+
+    vehicleModel: selectedRole === "driver" ? vehicleModel || null : null,
+
+    vehicleColor: selectedRole === "driver" ? vehicleColor || null : null,
+
     createdAt: new Date(),
   };
 
   users[selectedRole].push(user);
+
   return user;
 };
 
@@ -70,11 +102,52 @@ const createRideRequest = async (riderId, data) => {
 };
 
 const getRideRequestsByRider = async (riderId) => {
-  return rideRequests
+  const requests = rideRequests
     .filter((item) => item.rider === riderId)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-};
 
+  const requestsWithDriver = await Promise.all(
+    requests.map(async (request) => {
+      if (!request.assignedDriver) {
+        return {
+          ...request,
+          assignedDriver: null,
+        };
+      }
+
+      const driver = await findUserById(request.assignedDriver);
+
+      if (!driver) {
+        return {
+          ...request,
+          assignedDriver: null,
+        };
+      }
+
+      return {
+        ...request,
+
+        assignedDriver: {
+          _id: driver._id,
+          name: driver.name,
+          full_name: driver.full_name || driver.name,
+          email: driver.email,
+          phone: driver.phone || null,
+
+          vehicleType: driver.vehicleType || null,
+
+          vehicleNumber: driver.vehicleNumber || null,
+
+          vehicleModel: driver.vehicleModel || null,
+
+          vehicleColor: driver.vehicleColor || null,
+        },
+      };
+    }),
+  );
+
+  return requestsWithDriver;
+};
 const getRideRequestById = async (id) => {
   return rideRequests.find((item) => item._id === id) || null;
 };
