@@ -4,7 +4,7 @@ const rideRequestSchema = new mongoose.Schema(
   {
     rider: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Rider", // Change to "User" if your actual model is User
+      ref: "Rider",
       required: true,
     },
 
@@ -77,6 +77,21 @@ const rideRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Driver",
       default: null,
+    },
+
+    driverLocation: {
+      latitude: {
+        type: Number,
+        default: null,
+      },
+      longitude: {
+        type: Number,
+        default: null,
+      },
+      updatedAt: {
+        type: Date,
+        default: null,
+      },
     },
 
     trip: {

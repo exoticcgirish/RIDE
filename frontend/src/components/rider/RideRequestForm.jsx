@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createRideRequest } from "../../services/rideApi";
+import RideMap from "../map/RideMap";
 
 function RideRequestForm() {
   const navigate = useNavigate();
@@ -18,6 +19,8 @@ function RideRequestForm() {
   const [formData, setFormData] = useState({
     pickupLocation: "",
     destination: "",
+    pickupCoordinates: null,
+    destinationCoordinates: null,
     departureDate: "",
     departureTime: "",
     seatsRequired: 1,
@@ -25,18 +28,71 @@ function RideRequestForm() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [locationType, setLocationType] = useState("pickup");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "seatsRequired" ? Number(value) : value,
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [name]: name === "seatsRequired" ? Number(value) : value,
+      };
+
+      if (name === "pickupLocation") {
+        updated.pickupCoordinates = null;
+      }
+
+      if (name === "destination") {
+        updated.destinationCoordinates = null;
+      }
+
+      return updated;
+    });
+  };
+
+  const handleLocationSelect = (coordinates) => {
+    if (locationType === "pickup") {
+      setFormData((prev) => ({
+        ...prev,
+        pickupCoordinates: coordinates,
+      }));
+
+      console.log("Pickup coordinates:", coordinates);
+    }
+
+    if (locationType === "destination") {
+      setFormData((prev) => ({
+        ...prev,
+        destinationCoordinates: coordinates,
+      }));
+
+      console.log("Destination coordinates:", coordinates);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.pickupCoordinates) {
+      toast.error("Please select your pickup location on the map.");
+      return;
+    }
+
+    if (!formData.destinationCoordinates) {
+      toast.error("Please select your destination on the map.");
+      return;
+    }
+
+    if (!formData.pickupLocation.trim()) {
+      toast.error("Please enter pickup location.");
+      return;
+    }
+
+    if (!formData.destination.trim()) {
+      toast.error("Please enter destination.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -50,6 +106,8 @@ function RideRequestForm() {
       setFormData({
         pickupLocation: "",
         destination: "",
+        pickupCoordinates: null,
+        destinationCoordinates: null,
         departureDate: "",
         departureTime: "",
         seatsRequired: 1,
@@ -58,8 +116,11 @@ function RideRequestForm() {
 
       navigate("/my-ride-requests");
     } catch (err) {
+      console.error(err);
+
       toast.error(
-        err.response?.data?.message || "Failed to create ride request."
+        err.response?.data?.message ||
+          "Failed to create ride request."
       );
     } finally {
       setLoading(false);
@@ -70,9 +131,9 @@ function RideRequestForm() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
 
-        {/* Header */}
         <div className="flex items-start gap-4 mb-8">
           <button
+            type="button"
             onClick={() => navigate("/dashboard")}
             className="flex-shrink-0 w-11 h-11 rounded-full bg-yellow-400 hover:bg-yellow-500 transition-all duration-200 flex items-center justify-center shadow-sm"
           >
@@ -94,7 +155,6 @@ function RideRequestForm() {
           </div>
         </div>
 
-        {/* Form Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -103,7 +163,8 @@ function RideRequestForm() {
         >
           <form onSubmit={handleSubmit} className="space-y-7">
 
-            {/* Pickup & Destination */}
+            {/* LOCATION INPUTS */}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               <div>
@@ -116,11 +177,22 @@ function RideRequestForm() {
                   type="text"
                   name="pickupLocation"
                   value={formData.pickupLocation}
+                  onFocus={() => setLocationType("pickup")}
                   onChange={handleChange}
                   placeholder="Enter pickup location"
                   required
-                  className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-gray-800 outline-none transition focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+                  className={`w-full rounded-xl border px-4 py-3.5 text-gray-800 outline-none transition ${
+                    locationType === "pickup"
+                      ? "border-green-500 bg-white ring-2 ring-green-100"
+                      : "border-gray-300 bg-gray-50"
+                  }`}
                 />
+
+                {formData.pickupCoordinates && (
+                  <p className="text-green-600 text-sm mt-2">
+                    ✓ Pickup coordinates selected
+                  </p>
+                )}
               </div>
 
               <div>
@@ -133,15 +205,54 @@ function RideRequestForm() {
                   type="text"
                   name="destination"
                   value={formData.destination}
+                  onFocus={() => setLocationType("destination")}
                   onChange={handleChange}
                   placeholder="Enter destination"
                   required
-                  className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-gray-800 outline-none transition focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+                  className={`w-full rounded-xl border px-4 py-3.5 text-gray-800 outline-none transition ${
+                    locationType === "destination"
+                      ? "border-red-500 bg-white ring-2 ring-red-100"
+                      : "border-gray-300 bg-gray-50"
+                  }`}
                 />
+
+                {formData.destinationCoordinates && (
+                  <p className="text-green-600 text-sm mt-2">
+                    ✓ Destination coordinates selected
+                  </p>
+                )}
               </div>
+
             </div>
 
-            {/* Date & Time */}
+            {/* MAP */}
+
+            <div>
+              <h3 className="flex items-center gap-2 mb-3 font-semibold text-gray-800">
+                <MapPin
+                  size={19}
+                  className={
+                    locationType === "pickup"
+                      ? "text-green-600"
+                      : "text-red-500"
+                  }
+                />
+
+                Select{" "}
+                {locationType === "pickup"
+                  ? "Pickup"
+                  : "Destination"}{" "}
+                Location on Map
+              </h3>
+
+              <RideMap
+                locationType={locationType}
+                onLocationSelect={handleLocationSelect}
+              />
+            </div>
+
+            {/* DATE AND TIME */}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               <div>
@@ -175,9 +286,11 @@ function RideRequestForm() {
                   className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 outline-none transition focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
                 />
               </div>
+
             </div>
 
-            {/* Seats & Notes */}
+            {/* SEATS AND NOTES */}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               <div>
@@ -214,9 +327,11 @@ function RideRequestForm() {
                   className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 resize-none outline-none transition focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
                 />
               </div>
+
             </div>
 
-            {/* Submit */}
+            {/* SUBMIT */}
+
             <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
@@ -239,22 +354,24 @@ function RideRequestForm() {
                       strokeWidth="3"
                       opacity=".3"
                     />
+
                     <path
                       d="M22 12a10 10 0 00-10-10"
                       stroke="currentColor"
                       strokeWidth="3"
                     />
                   </svg>
+
                   Creating Ride...
                 </span>
               ) : (
                 "Request Ride"
               )}
             </motion.button>
+
           </form>
         </motion.div>
 
-        {/* Ride Tips */}
         <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-2xl p-5 sm:p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">
             Ride Tips

@@ -27,3 +27,10 @@ export const getAcceptedRideGroups = () => {
 export const acceptRideGroup = (groupId) => {
   return API.patch(`/ride-groups/${groupId}/accept`);
 };
+export const updateDriverLocation = (rideRequestId, latitude, longitude) => {
+  return API.put("/drivers/location", {
+    rideRequestId,
+    latitude,
+    longitude,
+  });
+};

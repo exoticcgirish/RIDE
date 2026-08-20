@@ -9,6 +9,7 @@ const {
   getProfile,
   updateProfile,
   getApprovalStatus,
+  updateDriverLocation,
 } = require("../controllers/driver.controller");
 
 const {
@@ -17,51 +18,42 @@ const {
   getAccepted,
 } = require("../controllers/rideGroup.controller");
 
+router.get("/profile", authMiddleware, roleMiddleware("driver"), getProfile);
 
-router.get(
-  "/profile",
-  authMiddleware,
-  roleMiddleware("driver"),
-  getProfile
-);
-
-router.put(
-  "/profile",
-  authMiddleware,
-  roleMiddleware("driver"),
-  updateProfile
-);
-
+router.put("/profile", authMiddleware, roleMiddleware("driver"), updateProfile);
 
 router.get(
   "/status",
   authMiddleware,
   roleMiddleware("driver"),
-  getApprovalStatus
+  getApprovalStatus,
 );
-
+router.put(
+  "/location",
+  authMiddleware,
+  roleMiddleware("driver"),
+  updateDriverLocation,
+);
 
 router.get(
   "/ride-groups",
   authMiddleware,
   roleMiddleware("driver"),
-  getAvailable
+  getAvailable,
 );
-
 
 router.post(
   "/ride-groups/:groupId/accept",
   authMiddleware,
   roleMiddleware("driver"),
-  accept
+  accept,
 );
-
 
 router.get(
   "/ride-groups/accepted",
   authMiddleware,
   roleMiddleware("driver"),
-  getAccepted
+  getAccepted,
 );
 
 module.exports = router;
