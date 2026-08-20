@@ -1,5 +1,6 @@
 define(['exports'], (function (exports) { 'use strict';
 
+    // @ts-ignore
     try {
       self['workbox:core:7.4.0'] && _();
     } catch (e) {}
@@ -28,6 +29,8 @@ define(['exports'], (function (exports) { 'use strict';
       https://opensource.org/licenses/MIT.
     */
     const logger = (() => {
+      // Don't overwrite this value if it's already set.
+      // See https://github.com/GoogleChrome/workbox/pull/2284#issuecomment-560470923
       if (!('__WB_DISABLE_DEV_LOGS' in globalThis)) {
         self.__WB_DISABLE_DEV_LOGS = false;
       }
@@ -45,12 +48,15 @@ define(['exports'], (function (exports) { 'use strict';
           return;
         }
         if (method === 'groupCollapsed') {
+          // Safari doesn't print all console.groupCollapsed() arguments:
+          // https://bugs.webkit.org/show_bug.cgi?id=182754
           if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
             console[method](...args);
             return;
           }
         }
         const styles = [`background: ${methodToColorMap[method]}`, `border-radius: 0.5em`, `color: white`, `font-weight: bold`, `padding: 2px 0.5em`];
+        // When in a group, the workbox prefix is not displayed.
         const logPrefix = inGroup ? [] : ['%cworkbox', styles.join(';')];
         console[method](...logPrefix, ...args);
         if (method === 'groupCollapsed') {
@@ -60,6 +66,7 @@ define(['exports'], (function (exports) { 'use strict';
           inGroup = false;
         }
       };
+      // eslint-disable-next-line @typescript-eslint/ban-types
       const api = {};
       const loggerMethods = Object.keys(methodToColorMap);
       for (const key of loggerMethods) {
@@ -425,6 +432,8 @@ define(['exports'], (function (exports) { 'use strict';
       }
     };
     const isInstance = (object,
+    // Need the general type to do the check later.
+    // eslint-disable-next-line @typescript-eslint/ban-types
     expectedClass, details) => {
       if (!(object instanceof expectedClass)) {
         details['expectedClassName'] = expectedClass.name;
@@ -438,7 +447,9 @@ define(['exports'], (function (exports) { 'use strict';
       }
     };
     const isArrayOfClass = (value,
+    // Need general type to do check later.
     expectedClass,
+    // eslint-disable-line
     details) => {
       const error = new WorkboxError('not-array-of-class', details);
       if (!Array.isArray(value)) {
@@ -459,6 +470,7 @@ define(['exports'], (function (exports) { 'use strict';
       isArrayOfClass
     };
 
+    // @ts-ignore
     try {
       self['workbox:routing:7.4.0'] && _();
     } catch (e) {}
@@ -570,6 +582,8 @@ define(['exports'], (function (exports) { 'use strict';
             });
           }
         }
+        // These values are referenced directly by Router so cannot be
+        // altered by minificaton.
         this.handler = normalizeHandler(handler);
         this.match = match;
         this.method = method;
@@ -629,15 +643,24 @@ define(['exports'], (function (exports) { 'use strict';
           url
         }) => {
           const result = regExp.exec(url.href);
+          // Return immediately if there's no match.
           if (!result) {
             return;
           }
+          // Require that the match start at the first character in the URL string
+          // if it's a cross-origin request.
+          // See https://github.com/GoogleChrome/workbox/issues/281 for the context
+          // behind this behavior.
           if (url.origin !== location.origin && result.index !== 0) {
             {
               logger.debug(`The regular expression '${regExp.toString()}' only partially matched ` + `against the cross-origin URL '${url.toString()}'. RegExpRoute's will only ` + `handle cross-origin requests if they match the entire URL.`);
             }
             return;
           }
+          // If the route matches, but there aren't any capture groups defined, then
+          // this will return [], which is truthy and therefore sufficient to
+          // indicate a match.
+          // If there are capture groups, then it will return their values.
           return result.slice(1);
         };
         super(match, handler, method);
@@ -653,6 +676,8 @@ define(['exports'], (function (exports) { 'use strict';
     */
     const getFriendlyURL = url => {
       const urlObj = new URL(String(url), location.href);
+      // See https://github.com/GoogleChrome/workbox/issues/2323
+      // We want to include everything, except for the origin if it's same-origin.
       return urlObj.href.replace(new RegExp(`^${location.origin}`), '');
     };
 
@@ -701,6 +726,7 @@ define(['exports'], (function (exports) { 'use strict';
        * the event's request.
        */
       addFetchListener() {
+        // See https://github.com/Microsoft/TypeScript/issues/28357#issuecomment-436484705
         self.addEventListener('fetch', event => {
           const {
             request
@@ -737,8 +763,12 @@ define(['exports'], (function (exports) { 'use strict';
        * ```
        */
       addCacheListener() {
+        // See https://github.com/Microsoft/TypeScript/issues/28357#issuecomment-436484705
         self.addEventListener('message', event => {
+          // event.data is type 'any'
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           if (event.data && event.data.type === 'CACHE_URLS') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const {
               payload
             } = event.data;
@@ -754,8 +784,12 @@ define(['exports'], (function (exports) { 'use strict';
                 request,
                 event
               });
+              // TODO(philipwalton): TypeScript errors without this typecast for
+              // some reason (probably a bug). The real type here should work but
+              // doesn't: `Array<Promise<Response> | undefined>`.
             })); // TypeScript
             event.waitUntil(requestPromises);
+            // If a MessageChannel was used, reply to the message on success.
             if (event.ports && event.ports[0]) {
               void requestPromises.then(() => event.ports[0].postMessage(true));
             }
@@ -813,6 +847,8 @@ define(['exports'], (function (exports) { 'use strict';
             }
           }
         }
+        // If we don't have a handler because there was no matching route, then
+        // fall back to defaultHandler if that's defined.
         const method = request.method;
         if (!handler && this._defaultHandlerMap.has(method)) {
           {
@@ -822,11 +858,15 @@ define(['exports'], (function (exports) { 'use strict';
         }
         if (!handler) {
           {
+            // No handler so Workbox will do nothing. If logs is set of debug
+            // i.e. verbose, we should print out this information.
             logger.debug(`No route found for: ${getFriendlyURL(url)}`);
           }
           return;
         }
         {
+          // We have a handler, meaning Workbox is going to handle the route.
+          // print the routing details to the console.
           logger.groupCollapsed(`Router is responding to: ${getFriendlyURL(url)}`);
           debugMessages.forEach(msg => {
             if (Array.isArray(msg)) {
@@ -837,6 +877,8 @@ define(['exports'], (function (exports) { 'use strict';
           });
           logger.groupEnd();
         }
+        // Wrap in try and catch in case the handle method throws a synchronous
+        // error. It should still callback to the catch handler.
         let responsePromise;
         try {
           responsePromise = handler.handle({
@@ -848,11 +890,15 @@ define(['exports'], (function (exports) { 'use strict';
         } catch (err) {
           responsePromise = Promise.reject(err);
         }
+        // Get route's catch handler, if it exists
         const catchHandler = route && route.catchHandler;
         if (responsePromise instanceof Promise && (this._catchHandler || catchHandler)) {
           responsePromise = responsePromise.catch(async err => {
+            // If there's a route catch handler, process that first
             if (catchHandler) {
               {
+                // Still include URL here as it will be async from the console group
+                // and may not make sense without the URL
                 logger.groupCollapsed(`Error thrown when responding to: ` + ` ${getFriendlyURL(url)}. Falling back to route's Catch Handler.`);
                 logger.error(`Error thrown by:`, route);
                 logger.error(err);
@@ -873,6 +919,8 @@ define(['exports'], (function (exports) { 'use strict';
             }
             if (this._catchHandler) {
               {
+                // Still include URL here as it will be async from the console group
+                // and may not make sense without the URL
                 logger.groupCollapsed(`Error thrown when responding to: ` + ` ${getFriendlyURL(url)}. Falling back to global Catch Handler.`);
                 logger.error(`Error thrown by:`, route);
                 logger.error(err);
@@ -913,6 +961,8 @@ define(['exports'], (function (exports) { 'use strict';
         const routes = this._routes.get(request.method) || [];
         for (const route of routes) {
           let params;
+          // route.match returns type any, not possible to change right now.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const matchResult = route.match({
             url,
             sameOrigin,
@@ -921,25 +971,37 @@ define(['exports'], (function (exports) { 'use strict';
           });
           if (matchResult) {
             {
+              // Warn developers that using an async matchCallback is almost always
+              // not the right thing to do.
               if (matchResult instanceof Promise) {
                 logger.warn(`While routing ${getFriendlyURL(url)}, an async ` + `matchCallback function was used. Please convert the ` + `following route to use a synchronous matchCallback function:`, route);
               }
             }
+            // See https://github.com/GoogleChrome/workbox/issues/2079
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             params = matchResult;
             if (Array.isArray(params) && params.length === 0) {
+              // Instead of passing an empty array in as params, use undefined.
               params = undefined;
             } else if (matchResult.constructor === Object &&
+            // eslint-disable-line
             Object.keys(matchResult).length === 0) {
+              // Instead of passing an empty object in as params, use undefined.
               params = undefined;
             } else if (typeof matchResult === 'boolean') {
+              // For the boolean value true (rather than just something truth-y),
+              // don't set params.
+              // See https://github.com/GoogleChrome/workbox/pull/2134#issuecomment-513924353
               params = undefined;
             }
+            // Return early if have a match.
             return {
               route,
               params
             };
           }
         }
+        // If no match was found above, return and empty object.
         return {};
       }
       /**
@@ -1010,6 +1072,8 @@ define(['exports'], (function (exports) { 'use strict';
         if (!this._routes.has(route.method)) {
           this._routes.set(route.method, []);
         }
+        // Give precedence to all of the earlier routes by adding this additional
+        // route to the end of the array.
         this._routes.get(route.method).push(route);
       }
       /**
@@ -1050,6 +1114,7 @@ define(['exports'], (function (exports) { 'use strict';
     const getOrCreateDefaultRouter = () => {
       if (!defaultRouter) {
         defaultRouter = new Router();
+        // The helpers that use the default Router assume these listeners exist.
         defaultRouter.addFetchListener();
         defaultRouter.addCacheListener();
       }
@@ -1093,7 +1158,10 @@ define(['exports'], (function (exports) { 'use strict';
               paramName: 'capture'
             });
           }
+          // We want to check if Express-style wildcards are in the pathname only.
+          // TODO: Remove this log message in v4.
           const valueToCheck = capture.startsWith('http') ? captureUrl.pathname : capture;
+          // See https://github.com/pillarjs/path-to-regexp#parameters
           const wildcards = '[*:?+]';
           if (new RegExp(`${wildcards}`).exec(valueToCheck)) {
             logger.debug(`The '$capture' parameter contains an Express-style wildcard ` + `character (${wildcards}). Strings are now always interpreted as ` + `exact matches; use a RegExp for partial or wildcard matches.`);
@@ -1109,10 +1177,13 @@ define(['exports'], (function (exports) { 'use strict';
           }
           return url.href === captureUrl.href;
         };
+        // If `capture` is a string then `handler` and `method` must be present.
         route = new Route(matchCallback, handler, method);
       } else if (capture instanceof RegExp) {
+        // If `capture` is a `RegExp` then `handler` and `method` must be present.
         route = new RegExpRoute(capture, handler, method);
       } else if (typeof capture === 'function') {
+        // If `capture` is a function then `handler` and `method` must be present.
         route = new Route(capture, handler, method);
       } else if (capture instanceof Route) {
         route = capture;
@@ -1196,6 +1267,7 @@ define(['exports'], (function (exports) { 'use strict';
       return returnPromise;
     }
 
+    // @ts-ignore
     try {
       self['workbox:precaching:7.4.0'] && _();
     } catch (e) {}
@@ -1207,6 +1279,7 @@ define(['exports'], (function (exports) { 'use strict';
       license that can be found in the LICENSE file or at
       https://opensource.org/licenses/MIT.
     */
+    // Name of the search parameter used to store revision info.
     const REVISION_SEARCH_PARAM = '__WB_REVISION__';
     /**
      * Converts a manifest entry into a versioned URL suitable for precaching.
@@ -1223,6 +1296,8 @@ define(['exports'], (function (exports) { 'use strict';
           entry
         });
       }
+      // If a precache manifest entry is a string, it's assumed to be a versioned
+      // URL, like '/app.abcd1234.js'. Return as-is.
       if (typeof entry === 'string') {
         const urlObject = new URL(entry, location.href);
         return {
@@ -1239,6 +1314,8 @@ define(['exports'], (function (exports) { 'use strict';
           entry
         });
       }
+      // If there's just a URL and no revision, then it's also assumed to be a
+      // versioned URL.
       if (!revision) {
         const urlObject = new URL(url, location.href);
         return {
@@ -1246,6 +1323,8 @@ define(['exports'], (function (exports) { 'use strict';
           url: urlObject.href
         };
       }
+      // Otherwise, construct a properly versioned URL using the custom Workbox
+      // search parameter along with the revision info.
       const cacheKeyURL = new URL(url, location.href);
       const originalURL = new URL(url, location.href);
       cacheKeyURL.searchParams.set(REVISION_SEARCH_PARAM, revision);
@@ -1276,6 +1355,7 @@ define(['exports'], (function (exports) { 'use strict';
           request,
           state
         }) => {
+          // TODO: `state` should never be undefined...
           if (state) {
             state.originalRequest = request;
           }
@@ -1287,6 +1367,7 @@ define(['exports'], (function (exports) { 'use strict';
         }) => {
           if (event.type === 'install') {
             if (state && state.originalRequest && state.originalRequest instanceof Request) {
+              // TODO: `state` should never be undefined...
               const url = state.originalRequest.url;
               if (cachedResponse) {
                 this.notUpdatedURLs.push(url);
@@ -1321,6 +1402,7 @@ define(['exports'], (function (exports) { 'use strict';
           request,
           params
         }) => {
+          // Params is type any, can't change right now.
           /* eslint-disable */
           const cacheKey = (params === null || params === void 0 ? void 0 : params.cacheKey) || this._precacheController.getCacheKeyForURL(request.url);
           /* eslint-enable */
@@ -1473,6 +1555,7 @@ define(['exports'], (function (exports) { 'use strict';
      */
     async function copyResponse(response, modifier) {
       let origin = null;
+      // If response.url isn't set, assume it's cross-origin and keep origin null.
       if (response.url) {
         const responseURL = new URL(response.url);
         origin = responseURL.origin;
@@ -1483,12 +1566,17 @@ define(['exports'], (function (exports) { 'use strict';
         });
       }
       const clonedResponse = response.clone();
+      // Create a fresh `ResponseInit` object by cloning the headers.
       const responseInit = {
         headers: new Headers(clonedResponse.headers),
         status: clonedResponse.status,
         statusText: clonedResponse.statusText
       };
+      // Apply any user modifications.
       const modifiedResponseInit = responseInit;
+      // Create the new response from the body stream and `ResponseInit`
+      // modifications. Note: not all browsers support the Response.body stream,
+      // so fall back to reading the entire body into memory as a blob.
       const body = canConstructResponseFromBodyStream() ? clonedResponse.body : await clonedResponse.blob();
       return new Response(body, modifiedResponseInit);
     }
@@ -1520,9 +1608,11 @@ define(['exports'], (function (exports) { 'use strict';
      */
     async function cacheMatchIgnoreParams(cache, request, ignoreParams, matchOptions) {
       const strippedRequestURL = stripParams(request.url, ignoreParams);
+      // If the request doesn't include any ignored params, match as normal.
       if (request.url === strippedRequestURL) {
         return cache.match(request, matchOptions);
       }
+      // Otherwise, match by comparing keys
       const keysOptions = Object.assign(Object.assign({}, matchOptions), {
         ignoreSearch: true
       });
@@ -1570,6 +1660,9 @@ define(['exports'], (function (exports) { 'use strict';
       license that can be found in the LICENSE file or at
       https://opensource.org/licenses/MIT.
     */
+    // Callbacks to be executed whenever there's a quota error.
+    // Can't change Function type right now.
+    // eslint-disable-next-line @typescript-eslint/ban-types
     const quotaErrorCallbacks = new Set();
 
     /*
@@ -1619,6 +1712,7 @@ define(['exports'], (function (exports) { 'use strict';
       return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    // @ts-ignore
     try {
       self['workbox:strategies:7.4.0'] && _();
     } catch (e) {}
@@ -1711,6 +1805,8 @@ define(['exports'], (function (exports) { 'use strict';
         this._strategy = strategy;
         this._handlerDeferred = new Deferred();
         this._extendLifetimePromises = [];
+        // Copy the plugins list (since it's mutable on the strategy),
+        // so any mutations don't affect this handler instance.
         this._plugins = [...strategy.plugins];
         this._pluginStateMap = new Map();
         for (const plugin of this._plugins) {
@@ -1745,6 +1841,9 @@ define(['exports'], (function (exports) { 'use strict';
             return possiblePreloadResponse;
           }
         }
+        // If there is a fetchDidFail plugin, we need to save a clone of the
+        // original request before it's either modified by a requestWillFetch
+        // plugin or before the original request's body is consumed via fetch().
         const originalRequest = this.hasCallback('fetchDidFail') ? request.clone() : null;
         try {
           for (const cb of this.iterateCallbacks('requestWillFetch')) {
@@ -1760,9 +1859,13 @@ define(['exports'], (function (exports) { 'use strict';
             });
           }
         }
+        // The request can be altered by plugins with `requestWillFetch` making
+        // the original request (most likely from a `fetch` event) different
+        // from the Request we make. Pass both to `fetchDidFail` to aid debugging.
         const pluginFilteredRequest = request.clone();
         try {
           let fetchResponse;
+          // See https://github.com/GoogleChrome/workbox/issues/1796
           fetchResponse = await fetch(request, request.mode === 'navigate' ? undefined : this._strategy.fetchOptions);
           if ("development" !== 'production') {
             logger.debug(`Network request for ` + `'${getFriendlyURL(request.url)}' returned a response with ` + `status '${fetchResponse.status}'.`);
@@ -1779,6 +1882,8 @@ define(['exports'], (function (exports) { 'use strict';
           {
             logger.log(`Network request for ` + `'${getFriendlyURL(request.url)}' threw an error.`, error);
           }
+          // `originalRequest` will only exist if a `fetchDidFail` callback
+          // is being used (see above).
           if (originalRequest) {
             await this.runCallbacks('fetchDidFail', {
               error: error,
@@ -1865,6 +1970,8 @@ define(['exports'], (function (exports) { 'use strict';
        */
       async cachePut(key, response) {
         const request = toRequest(key);
+        // Run in the next task to avoid blocking other cache reads.
+        // https://github.com/w3c/ServiceWorker/issues/1397
         await timeout(0);
         const effectiveRequest = await this.getCacheKey(request, 'write');
         {
@@ -1874,6 +1981,7 @@ define(['exports'], (function (exports) { 'use strict';
               method: effectiveRequest.method
             });
           }
+          // See https://github.com/GoogleChrome/workbox/issues/2818
           const vary = response.headers.get('Vary');
           if (vary) {
             logger.debug(`The response for ${getFriendlyURL(effectiveRequest.url)} ` + `has a 'Vary: ${vary}' header. ` + `Consider setting the {ignoreVary: true} option on your strategy ` + `to ensure cache matching and deletion works as expected.`);
@@ -1901,6 +2009,9 @@ define(['exports'], (function (exports) { 'use strict';
         const cache = await self.caches.open(cacheName);
         const hasCacheUpdateCallback = this.hasCallback('cacheDidUpdate');
         const oldResponse = hasCacheUpdateCallback ? await cacheMatchIgnoreParams(
+        // TODO(philipwalton): the `__WB_REVISION__` param is a precaching
+        // feature. Consider into ways to only add this behavior if using
+        // precaching.
         cache, effectiveRequest.clone(), ['__WB_REVISION__'], matchOptions) : null;
         {
           logger.debug(`Updating the '${cacheName}' cache with a new Response ` + `for ${getFriendlyURL(effectiveRequest.url)}.`);
@@ -1909,6 +2020,7 @@ define(['exports'], (function (exports) { 'use strict';
           await cache.put(effectiveRequest, hasCacheUpdateCallback ? responseToCache.clone() : responseToCache);
         } catch (error) {
           if (error instanceof Error) {
+            // See https://developer.mozilla.org/en-US/docs/Web/API/DOMException#exception-QuotaExceededError
             if (error.name === 'QuotaExceededError') {
               await executeQuotaErrorCallbacks();
             }
@@ -1946,6 +2058,7 @@ define(['exports'], (function (exports) { 'use strict';
               mode,
               request: effectiveRequest,
               event: this.event,
+              // params has a type any can't change right now.
               params: this.params // eslint-disable-line
             }));
           }
@@ -1986,6 +2099,8 @@ define(['exports'], (function (exports) { 'use strict';
        */
       async runCallbacks(name, param) {
         for (const callback of this.iterateCallbacks(name)) {
+          // TODO(philipwalton): not sure why `any` is needed. It seems like
+          // this should work with `as WorkboxPluginCallbackParam[C]`.
           await callback(param);
         }
       }
@@ -2006,6 +2121,8 @@ define(['exports'], (function (exports) { 'use strict';
               const statefulParam = Object.assign(Object.assign({}, param), {
                 state
               });
+              // TODO(philipwalton): not sure why `any` is needed. It seems like
+              // this should work with `as WorkboxPluginCallbackParam[C]`.
               return plugin[name](statefulParam);
             };
             yield statefulCallback;
@@ -2215,6 +2332,7 @@ define(['exports'], (function (exports) { 'use strict';
        *     well as when the handler has completed all its work.
        */
       handleAll(options) {
+        // Allow for flexible options to be passed.
         if (options instanceof FetchEvent) {
           options = {
             event: options,
@@ -2231,6 +2349,7 @@ define(['exports'], (function (exports) { 'use strict';
         });
         const responseDone = this._getResponse(handler, request, event);
         const handlerDone = this._awaitComplete(responseDone, handler, request, event);
+        // Return an array of promises, suitable for use with Promise.all().
         return [responseDone, handlerDone];
       }
       async _getResponse(handler, request, event) {
@@ -2241,6 +2360,9 @@ define(['exports'], (function (exports) { 'use strict';
         let response = undefined;
         try {
           response = await this._handle(request, handler);
+          // The "official" Strategy subclasses all throw this error automatically,
+          // but in case a third-party Strategy doesn't, ensure that we have a
+          // consistent failure when there's no response or an error response.
           if (!response || response.type === 'error') {
             throw new WorkboxError('no-response', {
               url: request.url
@@ -2280,6 +2402,9 @@ define(['exports'], (function (exports) { 'use strict';
         try {
           response = await responseDone;
         } catch (error) {
+          // Ignore errors, as response errors should be caught via the `response`
+          // promise above. The `done` promise will only throw for errors in
+          // promises passed to `handler.waitUntil()`.
         }
         try {
           await handler.runCallbacks('handlerDidRespond', {
@@ -2364,6 +2489,10 @@ define(['exports'], (function (exports) { 'use strict';
         options.cacheName = cacheNames.getPrecacheName(options.cacheName);
         super(options);
         this._fallbackToNetwork = options.fallbackToNetwork === false ? false : true;
+        // Redirected responses cannot be used to satisfy a navigation request, so
+        // any redirected response must be "copied" rather than cloned, so the new
+        // response doesn't contain the `redirected` flag. See:
+        // https://bugs.chromium.org/p/chromium/issues/detail?id=669363&desc=2#c1
         this.plugins.push(PrecacheStrategy.copyRedirectedCacheableResponsesPlugin);
       }
       /**
@@ -2378,14 +2507,19 @@ define(['exports'], (function (exports) { 'use strict';
         if (response) {
           return response;
         }
+        // If this is an `install` event for an entry that isn't already cached,
+        // then populate the cache.
         if (handler.event && handler.event.type === 'install') {
           return await this._handleInstall(request, handler);
         }
+        // Getting here means something went wrong. An entry that should have been
+        // precached wasn't found in the cache.
         return await this._handleFetch(request, handler);
       }
       async _handleFetch(request, handler) {
         let response;
         const params = handler.params || {};
+        // Fall back to the network if we're configured to do so.
         if (this._fallbackToNetwork) {
           {
             logger.warn(`The precached response for ` + `${getFriendlyURL(request.url)} in ${this.cacheName} was not ` + `found. Falling back to the network.`);
@@ -2393,9 +2527,18 @@ define(['exports'], (function (exports) { 'use strict';
           const integrityInManifest = params.integrity;
           const integrityInRequest = request.integrity;
           const noIntegrityConflict = !integrityInRequest || integrityInRequest === integrityInManifest;
+          // Do not add integrity if the original request is no-cors
+          // See https://github.com/GoogleChrome/workbox/issues/3096
           response = await handler.fetch(new Request(request, {
             integrity: request.mode !== 'no-cors' ? integrityInRequest || integrityInManifest : undefined
           }));
+          // It's only "safe" to repair the cache if we're using SRI to guarantee
+          // that the response matches the precache manifest's expectations,
+          // and there's either a) no integrity property in the incoming request
+          // or b) there is an integrity, and it matches the precache manifest.
+          // See https://github.com/GoogleChrome/workbox/issues/2858
+          // Also if the original request users no-cors we don't use integrity.
+          // See https://github.com/GoogleChrome/workbox/issues/3096
           if (integrityInManifest && noIntegrityConflict && request.mode !== 'no-cors') {
             this._useDefaultCacheabilityPluginIfNeeded();
             const wasCached = await handler.cachePut(request, response.clone());
@@ -2406,6 +2549,8 @@ define(['exports'], (function (exports) { 'use strict';
             }
           }
         } else {
+          // This shouldn't normally happen, but there are edge cases:
+          // https://github.com/GoogleChrome/workbox/issues/1441
           throw new WorkboxError('missing-precache-entry', {
             cacheName: this.cacheName,
             url: request.url
@@ -2413,6 +2558,8 @@ define(['exports'], (function (exports) { 'use strict';
         }
         {
           const cacheKey = params.cacheKey || (await handler.getCacheKey(request, 'read'));
+          // Workbox is going to handle the route.
+          // print the routing details to the console.
           logger.groupCollapsed(`Precaching is responding to: ` + getFriendlyURL(request.url));
           logger.log(`Serving the precached url: ${getFriendlyURL(cacheKey instanceof Request ? cacheKey.url : cacheKey)}`);
           logger.groupCollapsed(`View request details here.`);
@@ -2428,8 +2575,12 @@ define(['exports'], (function (exports) { 'use strict';
       async _handleInstall(request, handler) {
         this._useDefaultCacheabilityPluginIfNeeded();
         const response = await handler.fetch(request);
+        // Make sure we defer cachePut() until after we know the response
+        // should be cached; see https://github.com/GoogleChrome/workbox/issues/2737
         const wasCached = await handler.cachePut(request, response.clone());
         if (!wasCached) {
+          // Throwing here will lead to the `install` handler failing, which
+          // we want to do if *any* of the responses aren't safe to cache.
           throw new WorkboxError('bad-precaching-response', {
             url: request.url,
             status: response.status
@@ -2468,9 +2619,11 @@ define(['exports'], (function (exports) { 'use strict';
         let defaultPluginIndex = null;
         let cacheWillUpdatePluginCount = 0;
         for (const [index, plugin] of this.plugins.entries()) {
+          // Ignore the copy redirected plugin when determining what to do.
           if (plugin === PrecacheStrategy.copyRedirectedCacheableResponsesPlugin) {
             continue;
           }
+          // Save the default plugin's index, in case it needs to be removed.
           if (plugin === PrecacheStrategy.defaultPrecacheCacheabilityPlugin) {
             defaultPluginIndex = index;
           }
@@ -2481,8 +2634,10 @@ define(['exports'], (function (exports) { 'use strict';
         if (cacheWillUpdatePluginCount === 0) {
           this.plugins.push(PrecacheStrategy.defaultPrecacheCacheabilityPlugin);
         } else if (cacheWillUpdatePluginCount > 1 && defaultPluginIndex !== null) {
+          // Only remove the default plugin; multiple custom plugins are allowed.
           this.plugins.splice(defaultPluginIndex, 1);
         }
+        // Nothing needs to be done if cacheWillUpdatePluginCount is 1
       }
     }
     PrecacheStrategy.defaultPrecacheCacheabilityPlugin = {
@@ -2541,6 +2696,7 @@ define(['exports'], (function (exports) { 'use strict';
           })],
           fallbackToNetwork
         });
+        // Bind the install and activate methods to the instance.
         this.install = this.install.bind(this);
         this.activate = this.activate.bind(this);
       }
@@ -2587,6 +2743,7 @@ define(['exports'], (function (exports) { 'use strict';
         }
         const urlsToWarnAbout = [];
         for (const entry of entries) {
+          // See https://github.com/GoogleChrome/workbox/issues/2259
           if (typeof entry === 'string') {
             urlsToWarnAbout.push(entry);
           } else if (entry && entry.revision === undefined) {
@@ -2632,9 +2789,13 @@ define(['exports'], (function (exports) { 'use strict';
        * @return {Promise<workbox-precaching.InstallResult>}
        */
       install(event) {
+        // waitUntil returns Promise<any>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return waitUntil(event, async () => {
           const installReportPlugin = new PrecacheInstallReportPlugin();
           this.strategy.plugins.push(installReportPlugin);
+          // Cache entries one at a time.
+          // See https://github.com/GoogleChrome/workbox/issues/2528
           for (const [url, cacheKey] of this._urlsToCacheKeys) {
             const integrity = this._cacheKeysToIntegrities.get(cacheKey);
             const cacheMode = this._urlsToCacheModes.get(url);
@@ -2675,6 +2836,8 @@ define(['exports'], (function (exports) { 'use strict';
        * @return {Promise<workbox-precaching.CleanupResult>}
        */
       activate(event) {
+        // waitUntil returns Promise<any>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return waitUntil(event, async () => {
           const cache = await self.caches.open(this.strategy.cacheName);
           const currentlyCachedRequests = await cache.keys();
@@ -2824,6 +2987,8 @@ define(['exports'], (function (exports) { 'use strict';
      * @memberof workbox-precaching
      */
     function removeIgnoredSearchParams(urlObject, ignoreURLParametersMatching = []) {
+      // Convert the iterable into an array at the start of the loop to make sure
+      // deletion doesn't mess up iteration.
       for (const paramName of [...urlObject.searchParams.keys()]) {
         if (ignoreURLParametersMatching.some(regExp => regExp.test(paramName))) {
           urlObject.searchParams.delete(paramName);
@@ -3070,6 +3235,7 @@ define(['exports'], (function (exports) { 'use strict';
      * @memberof workbox-precaching
      */
     function cleanupOutdatedCaches() {
+      // See https://github.com/Microsoft/TypeScript/issues/28357#issuecomment-436484705
       self.addEventListener('activate', event => {
         const cacheName = cacheNames.getPrecacheName();
         event.waitUntil(deleteOutdatedCaches(cacheName).then(cachesDeleted => {

@@ -5,9 +5,6 @@ const {
   getAcceptedGroupsForDriver,
 } = require("../services/rideGroup.service.js");
 
-// ============================================================
-// GET AVAILABLE GROUPS FOR DRIVER
-// ============================================================
 
 exports.getAvailable = async (
   req,
@@ -37,9 +34,6 @@ exports.getAvailable = async (
   }
 };
 
-// ============================================================
-// GET RIDER GROUP
-// ============================================================
 
 exports.getMine = async (
   req,
@@ -68,9 +62,6 @@ exports.getMine = async (
   }
 };
 
-// ============================================================
-// ACCEPT GROUP
-// ============================================================
 
 exports.accept = async (
   req,
@@ -104,9 +95,6 @@ exports.accept = async (
   }
 };
 
-// ============================================================
-// GET ACCEPTED GROUPS
-// ============================================================
 
 exports.getAccepted = async (
   req,

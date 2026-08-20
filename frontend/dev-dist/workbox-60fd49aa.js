@@ -437,7 +437,6 @@ define(['exports'], (function (exports) { 'use strict';
       }
     };
     const isArrayOfClass = (value, expectedClass,
-    // eslint-disable-line
     details) => {
       const error = new WorkboxError('not-array-of-class', details);
       if (!Array.isArray(value)) {
@@ -928,7 +927,6 @@ define(['exports'], (function (exports) { 'use strict';
             if (Array.isArray(params) && params.length === 0) {
               params = undefined;
             } else if (matchResult.constructor === Object &&
-            // eslint-disable-line
             Object.keys(matchResult).length === 0) {
               params = undefined;
             } else if (typeof matchResult === 'boolean') {
@@ -1321,9 +1319,9 @@ define(['exports'], (function (exports) { 'use strict';
           request,
           params
         }) => {
-          /* eslint-disable */
+          
           const cacheKey = (params === null || params === void 0 ? void 0 : params.cacheKey) || this._precacheController.getCacheKeyForURL(request.url);
-          /* eslint-enable */
+          
           return cacheKey ? new Request(cacheKey, {
             headers: request.headers
           }) : request;
