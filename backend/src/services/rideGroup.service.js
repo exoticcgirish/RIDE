@@ -9,6 +9,10 @@ const DRIVER_FIELDS =
 const RIDER_FIELDS =
   "full_name name email phone college";
 
+// ============================================================
+// HELPERS
+// ============================================================
+
 const normalize = (value) => {
   return String(value || "")
     .trim()
@@ -59,6 +63,10 @@ const populateGroup = (query) => {
     });
 };
 
+// ============================================================
+// FIND EXACT SEAT COMBINATION
+// ============================================================
+
 const findExactSeatCombination = (
   requests,
   targetSeats
@@ -101,6 +109,10 @@ const findExactSeatCombination = (
   return result.reverse();
 };
 
+// ============================================================
+// CREATE / FIND GROUP
+// ============================================================
+
 const findOrCreateGroup = async (
   rideRequestInput
 ) => {
@@ -128,6 +140,7 @@ const findOrCreateGroup = async (
     );
   }
 
+  // Already grouped
   if (rideRequest.groupId) {
     return populateGroup(
       RideGroup.findById(
@@ -195,6 +208,10 @@ const findOrCreateGroup = async (
   const destinationNormalized =
     normalize(destination);
 
+  // ==========================================================
+  // GET WAITING REQUESTS
+  // ==========================================================
+
   const waitingRequests =
     await RideRequest.find({
       status: "waiting",
@@ -211,6 +228,15 @@ const findOrCreateGroup = async (
     }).sort({
       createdAt: 1,
     });
+
+  // ==========================================================
+  // FIND COMPATIBLE REQUESTS
+  // SAME:
+  // pickup
+  // destination
+  // date
+  // time
+  // ==========================================================
 
   const compatibleRequests =
     waitingRequests.filter(
@@ -252,6 +278,10 @@ const findOrCreateGroup = async (
       }
     );
 
+  // ==========================================================
+  // FIND EXACTLY 4 SEATS
+  // ==========================================================
+
   const combination =
     findExactSeatCombination(
       compatibleRequests,
@@ -284,6 +314,10 @@ const findOrCreateGroup = async (
     return null;
   }
 
+  // ==========================================================
+  // CREATE GROUP
+  // ==========================================================
+
   const group =
     await RideGroup.create({
       members: memberIds,
@@ -304,6 +338,10 @@ const findOrCreateGroup = async (
 
       assignedDriver: null,
     });
+
+  // ==========================================================
+  // UPDATE RIDES
+  // ==========================================================
 
   await RideRequest.updateMany(
     {
@@ -326,28 +364,70 @@ const findOrCreateGroup = async (
   );
 };
 
-const getAvailableGroups =
-  async () => {
-    return populateGroup(
-      RideGroup.find({
-        status: "ready",
+// ============================================================
+// GET AVAILABLE GROUPS
+// IMPORTANT:
+// DRIVER CAN ONLY SEE AVAILABLE GROUPS IF
+// THEY HAVE NOT ALREADY ACCEPTED ONE.
+// ============================================================
 
-        $or: [
-          {
-            assignedDriver: null,
-          },
-          {
-            assignedDriver: {
-              $exists: false,
-            },
-          },
-        ],
-      }).sort({
-        departureDate: 1,
-        departureTime: 1,
-      })
+const getAvailableGroups = async (
+  driverId
+) => {
+  if (!driverId) {
+    throw new Error(
+      "Driver ID is required"
     );
-  };
+  }
+
+  // ----------------------------------------------------------
+  // CHECK IF DRIVER ALREADY HAS ACCEPTED GROUP
+  // ----------------------------------------------------------
+
+  const existingAcceptedGroup =
+    await RideGroup.findOne({
+      assignedDriver: driverId,
+      status: "accepted",
+    }).select("_id");
+
+  // ----------------------------------------------------------
+  // DRIVER ALREADY ACCEPTED ONE
+  // RETURN EMPTY LIST
+  // ----------------------------------------------------------
+
+  if (existingAcceptedGroup) {
+    return [];
+  }
+
+  // ----------------------------------------------------------
+  // DRIVER HAS NOT ACCEPTED ANY GROUP
+  // RETURN READY GROUPS
+  // ----------------------------------------------------------
+
+  return populateGroup(
+    RideGroup.find({
+      status: "ready",
+
+      $or: [
+        {
+          assignedDriver: null,
+        },
+        {
+          assignedDriver: {
+            $exists: false,
+          },
+        },
+      ],
+    }).sort({
+      departureDate: 1,
+      departureTime: 1,
+    })
+  );
+};
+
+// ============================================================
+// GET GROUP FOR RIDER
+// ============================================================
 
 const getGroupForRider =
   async (riderId) => {
@@ -383,6 +463,12 @@ const getGroupForRider =
     );
   };
 
+// ============================================================
+// ACCEPT GROUP
+// IMPORTANT:
+// DRIVER CAN ACCEPT ONLY ONE GROUP
+// ============================================================
+
 const acceptGroup = async (
   groupId,
   driverId
@@ -398,6 +484,28 @@ const acceptGroup = async (
       "Driver ID is required"
     );
   }
+
+  // ----------------------------------------------------------
+  // FIRST CHECK:
+  // DOES DRIVER ALREADY HAVE AN ACCEPTED GROUP?
+  // ----------------------------------------------------------
+
+  const existingAcceptedGroup =
+    await RideGroup.findOne({
+      assignedDriver: driverId,
+      status: "accepted",
+    }).select("_id");
+
+  if (existingAcceptedGroup) {
+    throw new Error(
+      "You have already accepted a ride group. You cannot accept another group."
+    );
+  }
+
+  // ----------------------------------------------------------
+  // ATOMIC ACCEPT
+  // Only READY group can be accepted.
+  // ----------------------------------------------------------
 
   const group =
     await RideGroup.findOneAndUpdate(
@@ -434,6 +542,10 @@ const acceptGroup = async (
     );
   }
 
+  // ----------------------------------------------------------
+  // UPDATE ALL RIDERS IN THIS GROUP
+  // ----------------------------------------------------------
+
   await RideRequest.updateMany(
     {
       _id: {
@@ -449,12 +561,20 @@ const acceptGroup = async (
     }
   );
 
+  // ----------------------------------------------------------
+  // RETURN ACCEPTED GROUP
+  // ----------------------------------------------------------
+
   return populateGroup(
     RideGroup.findById(
       group._id
     )
   );
 };
+
+// ============================================================
+// GET ACCEPTED GROUPS FOR DRIVER
+// ============================================================
 
 const getAcceptedGroupsForDriver =
   async (driverId) => {
@@ -474,6 +594,10 @@ const getAcceptedGroupsForDriver =
       })
     );
   };
+
+// ============================================================
+// EXPORT
+// ============================================================
 
 module.exports = {
   findOrCreateGroup,

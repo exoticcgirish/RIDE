@@ -5,13 +5,19 @@ const {
   getAcceptedGroupsForDriver,
 } = require("../services/rideGroup.service.js");
 
+// ============================================================
+// GET AVAILABLE GROUPS FOR DRIVER
+// ============================================================
+
 exports.getAvailable = async (
   req,
   res
 ) => {
   try {
     const groups =
-      await getAvailableGroups();
+      await getAvailableGroups(
+        req.user.id
+      );
 
     return res.status(200).json({
       success: true,
@@ -30,6 +36,10 @@ exports.getAvailable = async (
     });
   }
 };
+
+// ============================================================
+// GET RIDER GROUP
+// ============================================================
 
 exports.getMine = async (
   req,
@@ -58,6 +68,10 @@ exports.getMine = async (
   }
 };
 
+// ============================================================
+// ACCEPT GROUP
+// ============================================================
+
 exports.accept = async (
   req,
   res
@@ -71,8 +85,10 @@ exports.accept = async (
 
     return res.status(200).json({
       success: true,
+
       message:
         "Ride group accepted successfully.",
+
       data: group,
     });
   } catch (error) {
@@ -87,6 +103,10 @@ exports.accept = async (
     });
   }
 };
+
+// ============================================================
+// GET ACCEPTED GROUPS
+// ============================================================
 
 exports.getAccepted = async (
   req,
