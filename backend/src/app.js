@@ -31,51 +31,41 @@ const corsOptions = {
   ],
   optionsSuccessStatus: 204,
 };
-
 app.use(cors(corsOptions));
-
 app.use(express.json());
 app.use(
   express.urlencoded({
     extended: true,
   })
 );
-
 app.use(
   "/api/auth",
   require("./routes/authRoutes")
 );
-
 app.use(
   "/api/users",
   require("./routes/user.routes")
 );
-
 app.use(
   "/api/protected",
   require("./routes/protectedRoutes")
 );
-
 app.use(
   "/api/ride-requests",
   require("./routes/rideRequest.routes")
 );
-
 app.use(
   "/api/admin",
   require("./routes/admin.routes")
 );
-
 app.use(
   "/api/drivers",
   require("./routes/driver.routes")
 );
-
 app.use(
   "/api/ride-groups",
   require("./routes/rideGroup.routes.js")
 );
-
 app.get("/test-rabbit", async (req, res) => {
   try {
     await sendMessage("ride_created", {
