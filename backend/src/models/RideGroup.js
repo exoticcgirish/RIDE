@@ -1,8 +1,12 @@
 const mongoose = require("mongoose");
 
-
 const rideGroupSchema = new mongoose.Schema(
   {
+    /*
+     * -------------------------------------------------------
+     * Group Members
+     * -------------------------------------------------------
+     */
 
     members: [
       {
@@ -12,7 +16,11 @@ const rideGroupSchema = new mongoose.Schema(
       },
     ],
 
-
+    /*
+     * -------------------------------------------------------
+     * Pickup
+     * -------------------------------------------------------
+     */
 
     pickupLocation: {
       type: String,
@@ -46,7 +54,7 @@ const rideGroupSchema = new mongoose.Schema(
 
     /*
      * -------------------------------------------------------
-     * Trip information
+     * Trip Information
      * -------------------------------------------------------
      */
 
@@ -59,6 +67,96 @@ const rideGroupSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+
+    /*
+     * -------------------------------------------------------
+     * Group Status
+     * -------------------------------------------------------
+     *
+     * waiting
+     *   Group is being prepared.
+     *
+     * ready
+     *   Group is available for a driver.
+     *
+     * accepted
+     *   Driver accepted the group.
+     *
+     * in_progress
+     *   Driver entered the correct OTP and ride started.
+     *
+     * completed
+     *   Driver completed the ride.
+     *
+     * cancelled
+     *   Group was cancelled.
+     * -------------------------------------------------------
+     */
+
+    status: {
+      type: String,
+
+      enum: [
+        "waiting",
+        "ready",
+        "accepted",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+
+      default: "waiting",
+    },
+
+    /*
+     * -------------------------------------------------------
+     * Ride OTP
+     * -------------------------------------------------------
+     *
+     * One OTP belongs to the whole RideGroup.
+     *
+     * Example:
+     *
+     * Rider A
+     * Rider B
+     * Rider C
+     * Rider D
+     *
+     * OTP = 4827
+     *
+     * Driver enters 4827 once.
+     * The entire group ride starts.
+     * -------------------------------------------------------
+     */
+
+    rideOtp: {
+      type: String,
+      default: null,
+      minlength: 4,
+      maxlength: 4,
+    },
+
+    /*
+     * -------------------------------------------------------
+     * Ride Started
+     * -------------------------------------------------------
+     */
+
+    rideStartedAt: {
+      type: Date,
+      default: null,
+    },
+
+    /*
+     * -------------------------------------------------------
+     * Ride Completed
+     * -------------------------------------------------------
+     */
+
+    rideCompletedAt: {
+      type: Date,
+      default: null,
     },
 
     /*
@@ -83,35 +181,13 @@ const rideGroupSchema = new mongoose.Schema(
 
     /*
      * -------------------------------------------------------
-     * Group status
-     * -------------------------------------------------------
-     */
-
-    status: {
-      type: String,
-
-      enum: [
-        "waiting",
-        "ready",
-        "accepted",
-        "completed",
-        "cancelled",
-      ],
-
-      default: "waiting",
-    },
-
-    /*
-     * -------------------------------------------------------
-     * Assigned driver
+     * Assigned Driver
      * -------------------------------------------------------
      */
 
     assignedDriver: {
       type: mongoose.Schema.Types.ObjectId,
-
       ref: "Driver",
-
       default: null,
     },
   },
@@ -123,13 +199,7 @@ const rideGroupSchema = new mongoose.Schema(
 
 /*
 |--------------------------------------------------------------------------
-| Query indexes
-|--------------------------------------------------------------------------
-|
-| IMPORTANT:
-|
-| There are NO GeoJSON / 2dsphere indexes anymore.
-|
+| Query Indexes
 |--------------------------------------------------------------------------
 */
 
@@ -155,7 +225,4 @@ rideGroupSchema.index({
 
 module.exports =
   mongoose.models.RideGroup ||
-  mongoose.model(
-    "RideGroup",
-    rideGroupSchema,
-  );
+  mongoose.model("RideGroup", rideGroupSchema);

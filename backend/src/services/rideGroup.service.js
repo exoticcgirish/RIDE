@@ -3,13 +3,26 @@ const RideRequest = require("../models/RideRequest.js");
 
 const MAX_SEATS = 4;
 
+/*
+|--------------------------------------------------------------------------
+| Fields used when populating Driver and Rider information
+|--------------------------------------------------------------------------
+*/
 
 const DRIVER_FIELDS =
   "full_name name email phone vehicleType vehicleNumber vehicleModel vehicleColor";
 
-const RIDER_FIELDS =
-  "full_name name email phone college";
+const RIDER_FIELDS = "full_name name email phone college";
 
+/*
+|--------------------------------------------------------------------------
+| Normalize normal location strings
+|--------------------------------------------------------------------------
+|
+| Used as a fallback when eLoc is not available.
+|
+|--------------------------------------------------------------------------
+*/
 
 const normalize = (value) => {
   return String(value || "")
@@ -19,6 +32,11 @@ const normalize = (value) => {
     .replace(/\s+/g, " ");
 };
 
+/*
+|--------------------------------------------------------------------------
+| Normalize Mappls eLoc
+|--------------------------------------------------------------------------
+*/
 
 const normalizeELoc = (value) => {
   return String(value || "")
@@ -26,6 +44,11 @@ const normalizeELoc = (value) => {
     .toUpperCase();
 };
 
+/*
+|--------------------------------------------------------------------------
+| Compare dates
+|--------------------------------------------------------------------------
+*/
 
 const isSameDate = (date1, date2) => {
   if (!date1 || !date2) {
@@ -35,10 +58,7 @@ const isSameDate = (date1, date2) => {
   const first = new Date(date1);
   const second = new Date(date2);
 
-  if (
-    Number.isNaN(first.getTime()) ||
-    Number.isNaN(second.getTime())
-  ) {
+  if (Number.isNaN(first.getTime()) || Number.isNaN(second.getTime())) {
     return false;
   }
 
@@ -49,15 +69,26 @@ const isSameDate = (date1, date2) => {
   );
 };
 
-
+/*
+|--------------------------------------------------------------------------
+| Compare departure times
+|--------------------------------------------------------------------------
+*/
 
 const isSameTime = (time1, time2) => {
-  return (
-    String(time1 || "").trim() ===
-    String(time2 || "").trim()
-  );
+  return String(time1 || "").trim() === String(time2 || "").trim();
 };
 
+/*
+|--------------------------------------------------------------------------
+| Check whether two locations match
+|--------------------------------------------------------------------------
+|
+| eLoc is preferred.
+| If eLoc is unavailable, location text is compared.
+|
+|--------------------------------------------------------------------------
+*/
 
 const locationMatches = ({
   currentELoc,
@@ -65,19 +96,18 @@ const locationMatches = ({
   candidateELoc,
   candidateLocation,
 }) => {
+  const normalizedCurrentELoc = normalizeELoc(currentELoc);
 
+  const normalizedCandidateELoc = normalizeELoc(candidateELoc);
 
-  const normalizedCurrentELoc =
-    normalizeELoc(currentELoc);
-
-  const normalizedCandidateELoc =
-    normalizeELoc(candidateELoc);
+  /*
+   * First compare Mappls eLoc.
+   */
 
   if (
     normalizedCurrentELoc &&
     normalizedCandidateELoc &&
-    normalizedCurrentELoc ===
-      normalizedCandidateELoc
+    normalizedCurrentELoc === normalizedCandidateELoc
   ) {
     return {
       matches: true,
@@ -85,19 +115,18 @@ const locationMatches = ({
     };
   }
 
+  /*
+   * Fallback to normalized location text.
+   */
 
+  const normalizedCurrentLocation = normalize(currentLocation);
 
-  const normalizedCurrentLocation =
-    normalize(currentLocation);
-
-  const normalizedCandidateLocation =
-    normalize(candidateLocation);
+  const normalizedCandidateLocation = normalize(candidateLocation);
 
   if (
     normalizedCurrentLocation &&
     normalizedCandidateLocation &&
-    normalizedCurrentLocation ===
-      normalizedCandidateLocation
+    normalizedCurrentLocation === normalizedCandidateLocation
   ) {
     return {
       matches: true,
@@ -111,31 +140,37 @@ const locationMatches = ({
   };
 };
 
-
+/*
+|--------------------------------------------------------------------------
+| Convert coordinates to GeoJSON Point
+|--------------------------------------------------------------------------
+|
+| Kept because your existing project may still have optional
+| coordinate information.
+|
+|--------------------------------------------------------------------------
+*/
 
 const makePoint = (coordinates) => {
   if (
     !coordinates ||
-    !Number.isFinite(
-      Number(coordinates.latitude),
-    ) ||
-    !Number.isFinite(
-      Number(coordinates.longitude),
-    )
+    !Number.isFinite(Number(coordinates.latitude)) ||
+    !Number.isFinite(Number(coordinates.longitude))
   ) {
     return null;
   }
 
   return {
     type: "Point",
-
-    coordinates: [
-      Number(coordinates.longitude),
-      Number(coordinates.latitude),
-    ],
+    coordinates: [Number(coordinates.longitude), Number(coordinates.latitude)],
   };
 };
 
+/*
+|--------------------------------------------------------------------------
+| Populate RideGroup
+|--------------------------------------------------------------------------
+*/
 
 const populateGroup = (query) => {
   return query
@@ -154,30 +189,44 @@ const populateGroup = (query) => {
 
 /*
 |--------------------------------------------------------------------------
+| Generate Ride OTP
+|--------------------------------------------------------------------------
+|
+| Generates a random 4-digit OTP.
+|
+| Example:
+|
+| 4827
+|
+| The OTP belongs to the entire RideGroup.
+|
+|--------------------------------------------------------------------------
+*/
+
+const generateRideOtp = () => {
+  return String(Math.floor(1000 + Math.random() * 9000));
+};
+
+/*
+|--------------------------------------------------------------------------
 | Find Exact Seat Combination
 |--------------------------------------------------------------------------
 |
 | Example:
 |
-| Rider A = 2
-| Rider B = 1
-| Rider C = 1
+| Rider A = 2 seats
+| Rider B = 1 seat
+| Rider C = 1 seat
 |
-| Total = 4
+| Total = 4 seats
 |
 |--------------------------------------------------------------------------
 */
 
-const findExactSeatCombination = (
-  requests,
-  targetSeats,
-) => {
+const findExactSeatCombination = (requests, targetSeats) => {
   const result = [];
 
-  const findCombination = (
-    index,
-    total,
-  ) => {
+  const findCombination = (index, total) => {
     if (total === targetSeats) {
       return true;
     }
@@ -186,25 +235,11 @@ const findExactSeatCombination = (
       return false;
     }
 
-    for (
-      let i = index;
-      i < requests.length;
-      i++
-    ) {
-      const seats =
-        Number(
-          requests[i].seatsRequired,
-        ) || 1;
+    for (let i = index; i < requests.length; i++) {
+      const seats = Number(requests[i].seatsRequired) || 1;
 
-      if (
-        findCombination(
-          i + 1,
-          total + seats,
-        )
-      ) {
-        result.push(
-          requests[i],
-        );
+      if (findCombination(i + 1, total + seats)) {
+        result.push(requests[i]);
 
         return true;
       }
@@ -213,8 +248,7 @@ const findExactSeatCombination = (
     return false;
   };
 
-  const found =
-    findCombination(0, 0);
+  const found = findCombination(0, 0);
 
   if (!found) {
     return null;
@@ -225,13 +259,18 @@ const findExactSeatCombination = (
 
 /*
 |--------------------------------------------------------------------------
-| Find Or Create Group
+| Find Or Create RideGroup
+|--------------------------------------------------------------------------
+|
+| Existing grouping logic.
+|
+| A group is created only when an exact 4-seat combination
+| can be found.
+|
 |--------------------------------------------------------------------------
 */
 
-const findOrCreateGroup = async (
-  rideRequestInput,
-) => {
+const findOrCreateGroup = async (rideRequestInput) => {
   /*
    * -------------------------------------------------------
    * Find current RideRequest
@@ -242,25 +281,16 @@ const findOrCreateGroup = async (
 
   if (
     rideRequestInput &&
-    typeof rideRequestInput ===
-      "object" &&
+    typeof rideRequestInput === "object" &&
     rideRequestInput._id
   ) {
-    rideRequest =
-      await RideRequest.findById(
-        rideRequestInput._id,
-      );
+    rideRequest = await RideRequest.findById(rideRequestInput._id);
   } else {
-    rideRequest =
-      await RideRequest.findById(
-        rideRequestInput,
-      );
+    rideRequest = await RideRequest.findById(rideRequestInput);
   }
 
   if (!rideRequest) {
-    throw new Error(
-      "Ride request not found.",
-    );
+    throw new Error("Ride request not found.");
   }
 
   /*
@@ -270,11 +300,7 @@ const findOrCreateGroup = async (
    */
 
   if (rideRequest.groupId) {
-    return populateGroup(
-      RideGroup.findById(
-        rideRequest.groupId,
-      ),
-    );
+    return populateGroup(RideGroup.findById(rideRequest.groupId));
   }
 
   /*
@@ -283,43 +309,20 @@ const findOrCreateGroup = async (
    * -------------------------------------------------------
    */
 
-  const pickupLocation =
-    String(
-      rideRequest.pickupLocation ||
-        "",
-    ).trim();
+  const pickupLocation = String(rideRequest.pickupLocation || "").trim();
 
-  const destination =
-    String(
-      rideRequest.destination ||
-        "",
-    ).trim();
+  const destination = String(rideRequest.destination || "").trim();
 
-  const pickupELoc =
-    String(
-      rideRequest.pickupELoc ||
-        "",
-    ).trim() || null;
+  const pickupELoc = String(rideRequest.pickupELoc || "").trim() || null;
 
   const destinationELoc =
-    String(
-      rideRequest.destinationELoc ||
-        "",
-    ).trim() || null;
+    String(rideRequest.destinationELoc || "").trim() || null;
 
-  const departureDate =
-    rideRequest.departureDate;
+  const departureDate = rideRequest.departureDate;
 
-  const departureTime =
-    String(
-      rideRequest.departureTime ||
-        "",
-    ).trim();
+  const departureTime = String(rideRequest.departureTime || "").trim();
 
-  const seatsRequired =
-    Number(
-      rideRequest.seatsRequired,
-    ) || 1;
+  const seatsRequired = Number(rideRequest.seatsRequired) || 1;
 
   /*
    * -------------------------------------------------------
@@ -328,55 +331,36 @@ const findOrCreateGroup = async (
    */
 
   if (!pickupLocation) {
-    throw new Error(
-      "pickupLocation is required.",
-    );
+    throw new Error("pickupLocation is required.");
   }
 
   if (!destination) {
-    throw new Error(
-      "destination is required.",
-    );
+    throw new Error("destination is required.");
   }
 
   if (!departureDate) {
-    throw new Error(
-      "departureDate is required.",
-    );
+    throw new Error("departureDate is required.");
   }
 
   if (!departureTime) {
-    throw new Error(
-      "departureTime is required.",
-    );
+    throw new Error("departureTime is required.");
   }
 
-  if (
-    seatsRequired < 1 ||
-    seatsRequired > MAX_SEATS
-  ) {
-    throw new Error(
-      `Seats required must be between 1 and ${MAX_SEATS}.`,
-    );
+  if (seatsRequired < 1 || seatsRequired > MAX_SEATS) {
+    throw new Error(`Seats required must be between 1 and ${MAX_SEATS}.`);
   }
 
   /*
    * -------------------------------------------------------
-   * IMPORTANT:
-   *
-   * Coordinates are NOT required anymore.
-   *
-   * The current system uses eLoc.
+   * Coordinates are optional.
+   * eLoc remains the primary location identifier.
    * -------------------------------------------------------
    */
 
-  console.log(
-    "[grouping] Current ride location identifiers:",
-    {
-      pickupELoc,
-      destinationELoc,
-    },
-  );
+  console.log("[grouping] Current ride location identifiers:", {
+    pickupELoc,
+    destinationELoc,
+  });
 
   /*
    * -------------------------------------------------------
@@ -384,28 +368,15 @@ const findOrCreateGroup = async (
    * -------------------------------------------------------
    */
 
-  const date =
-    new Date(departureDate);
+  const date = new Date(departureDate);
 
-  const startOfDay =
-    new Date(date);
+  const startOfDay = new Date(date);
 
-  startOfDay.setHours(
-    0,
-    0,
-    0,
-    0,
-  );
+  startOfDay.setHours(0, 0, 0, 0);
 
-  const endOfDay =
-    new Date(date);
+  const endOfDay = new Date(date);
 
-  endOfDay.setHours(
-    23,
-    59,
-    59,
-    999,
-  );
+  endOfDay.setHours(23, 59, 59, 999);
 
   /*
    * -------------------------------------------------------
@@ -413,168 +384,117 @@ const findOrCreateGroup = async (
    * -------------------------------------------------------
    */
 
-  const waitingRequests =
-    await RideRequest.find({
-      status: "waiting",
+  const waitingRequests = await RideRequest.find({
+    status: "waiting",
 
-      _id: {
-        $ne: rideRequest._id,
+    _id: {
+      $ne: rideRequest._id,
+    },
+
+    $or: [
+      {
+        groupId: null,
       },
-
-      $or: [
-        {
-          groupId: null,
+      {
+        groupId: {
+          $exists: false,
         },
-
-        {
-          groupId: {
-            $exists: false,
-          },
-        },
-      ],
-
-      departureDate: {
-        $gte: startOfDay,
-        $lte: endOfDay,
       },
+    ],
 
-      departureTime,
-    }).sort({
-      createdAt: 1,
-    });
+    departureDate: {
+      $gte: startOfDay,
+      $lte: endOfDay,
+    },
 
-  console.log(
-    `[grouping] Found ${waitingRequests.length} waiting candidates.`,
-  );
+    departureTime,
+  }).sort({
+    createdAt: 1,
+  });
+
+  console.log(`[grouping] Found ${waitingRequests.length} waiting candidates.`);
 
   /*
    * -------------------------------------------------------
-   * Location compatibility
+   * Find compatible requests
    * -------------------------------------------------------
    */
 
-  const compatibleRequests =
-    waitingRequests.filter(
-      (request) => {
-        /*
-         * ---------------------------------------------------
-         * Date
-         * ---------------------------------------------------
-         */
+  const compatibleRequests = waitingRequests.filter((request) => {
+    /*
+     * Date compatibility
+     */
 
-        if (
-          !isSameDate(
-            request.departureDate,
-            departureDate,
-          )
-        ) {
-          return false;
-        }
+    if (!isSameDate(request.departureDate, departureDate)) {
+      return false;
+    }
 
-        /*
-         * ---------------------------------------------------
-         * Time
-         * ---------------------------------------------------
-         */
+    /*
+     * Time compatibility
+     */
 
-        if (
-          !isSameTime(
-            request.departureTime,
-            departureTime,
-          )
-        ) {
-          return false;
-        }
+    if (!isSameTime(request.departureTime, departureTime)) {
+      return false;
+    }
 
-        /*
-         * ---------------------------------------------------
-         * Pickup
-         * ---------------------------------------------------
-         */
+    /*
+     * Pickup compatibility
+     */
 
-        const pickupMatch =
-          locationMatches({
-            currentELoc:
-              pickupELoc,
+    const pickupMatch = locationMatches({
+      currentELoc: pickupELoc,
 
-            currentLocation:
-              pickupLocation,
+      currentLocation: pickupLocation,
 
-            candidateELoc:
-              request.pickupELoc,
+      candidateELoc: request.pickupELoc,
 
-            candidateLocation:
-              request.pickupLocation,
-          });
+      candidateLocation: request.pickupLocation,
+    });
 
-        if (!pickupMatch.matches) {
-          return false;
-        }
+    if (!pickupMatch.matches) {
+      return false;
+    }
 
-        /*
-         * ---------------------------------------------------
-         * Destination
-         * ---------------------------------------------------
-         */
+    /*
+     * Destination compatibility
+     */
 
-        const destinationMatch =
-          locationMatches({
-            currentELoc:
-              destinationELoc,
+    const destinationMatch = locationMatches({
+      currentELoc: destinationELoc,
 
-            currentLocation:
-              destination,
+      currentLocation: destination,
 
-            candidateELoc:
-              request.destinationELoc,
+      candidateELoc: request.destinationELoc,
 
-            candidateLocation:
-              request.destination,
-          });
+      candidateLocation: request.destination,
+    });
 
-        if (
-          !destinationMatch.matches
-        ) {
-          return false;
-        }
+    if (!destinationMatch.matches) {
+      return false;
+    }
 
-        /*
-         * ---------------------------------------------------
-         * Seats
-         * ---------------------------------------------------
-         */
+    /*
+     * Seat validation
+     */
 
-        const seats =
-          Number(
-            request.seatsRequired,
-          ) || 1;
+    const seats = Number(request.seatsRequired) || 1;
 
-        if (
-          seats < 1 ||
-          seats > MAX_SEATS
-        ) {
-          return false;
-        }
+    if (seats < 1 || seats > MAX_SEATS) {
+      return false;
+    }
 
-        console.log(
-          "[grouping] Compatible ride found:",
-          {
-            rideRequestId:
-              request._id.toString(),
+    console.log("[grouping] Compatible ride found:", {
+      rideRequestId: request._id.toString(),
 
-            pickupELoc:
-              request.pickupELoc,
+      pickupELoc: request.pickupELoc,
 
-            destinationELoc:
-              request.destinationELoc,
+      destinationELoc: request.destinationELoc,
 
-            seats,
-          },
-        );
+      seats,
+    });
 
-        return true;
-      },
-    );
+    return true;
+  });
 
   console.log(
     `[grouping] ${compatibleRequests.length} compatible requests found.`,
@@ -586,10 +506,7 @@ const findOrCreateGroup = async (
    * -------------------------------------------------------
    */
 
-  const allCompatible = [
-    rideRequest,
-    ...compatibleRequests,
-  ];
+  const allCompatible = [rideRequest, ...compatibleRequests];
 
   /*
    * -------------------------------------------------------
@@ -597,16 +514,10 @@ const findOrCreateGroup = async (
    * -------------------------------------------------------
    */
 
-  const combination =
-    findExactSeatCombination(
-      allCompatible,
-      MAX_SEATS,
-    );
+  const combination = findExactSeatCombination(allCompatible, MAX_SEATS);
 
   if (!combination) {
-    console.log(
-      "[grouping] No exact 4-seat combination found.",
-    );
+    console.log("[grouping] No exact 4-seat combination found.");
 
     return null;
   }
@@ -617,25 +528,12 @@ const findOrCreateGroup = async (
    * -------------------------------------------------------
    */
 
-  const totalSeats =
-    combination.reduce(
-      (total, request) => {
-        return (
-          total +
-          (Number(
-            request.seatsRequired,
-          ) || 1)
-        );
-      },
-      0,
-    );
+  const totalSeats = combination.reduce((total, request) => {
+    return total + (Number(request.seatsRequired) || 1);
+  }, 0);
 
-  if (
-    totalSeats !== MAX_SEATS
-  ) {
-    console.log(
-      "[grouping] Combination does not contain exactly 4 seats.",
-    );
+  if (totalSeats !== MAX_SEATS) {
+    console.log("[grouping] Combination does not contain exactly 4 seats.");
 
     return null;
   }
@@ -646,41 +544,34 @@ const findOrCreateGroup = async (
    * -------------------------------------------------------
    */
 
-  const memberIds =
-    combination.map(
-      (request) =>
-        request._id,
-    );
+  const memberIds = combination.map((request) => request._id);
 
   console.log(
     "[grouping] Creating group with members:",
-    memberIds.map((id) =>
-      id.toString(),
-    ),
+    memberIds.map((id) => id.toString()),
   );
 
   /*
    * -------------------------------------------------------
-   * Use current ride's location information
+   * Optional coordinates
    * -------------------------------------------------------
    */
 
-  const pickupCoordinates =
-    rideRequest.pickupCoordinates ||
-    null;
+  const pickupCoordinates = rideRequest.pickupCoordinates || null;
 
-  const destinationCoordinates =
-    rideRequest.destinationCoordinates ||
-    null;
+  const destinationCoordinates = rideRequest.destinationCoordinates || null;
 
   /*
    * -------------------------------------------------------
-   * Build group data
+   * Build RideGroup
    * -------------------------------------------------------
    *
-   * Coordinates are OPTIONAL.
+   * OTP is NOT generated here.
    *
-   * eLoc is the current source of truth.
+   * OTP is generated when a driver accepts the group.
+   *
+   * This prevents an OTP from being created for a group
+   * that does not yet have a driver.
    * -------------------------------------------------------
    */
 
@@ -689,101 +580,76 @@ const findOrCreateGroup = async (
 
     pickupLocation,
 
-    pickupELoc:
-      pickupELoc,
+    pickupELoc,
 
     destination,
 
-    destinationELoc:
-      destinationELoc,
+    destinationELoc,
 
     departureDate,
 
     departureTime,
 
-    totalSeats:
-      MAX_SEATS,
+    totalSeats: MAX_SEATS,
 
-    maxSeats:
-      MAX_SEATS,
+    maxSeats: MAX_SEATS,
 
     status: "ready",
 
     assignedDriver: null,
+
+    rideOtp: null,
+
+    rideStartedAt: null,
+
+    rideCompletedAt: null,
   };
 
   /*
    * -------------------------------------------------------
-   * Preserve coordinates only if available
+   * Preserve pickup coordinates if available
    * -------------------------------------------------------
    */
 
   if (
     pickupCoordinates &&
-    Number.isFinite(
-      Number(
-        pickupCoordinates.latitude,
-      ),
-    ) &&
-    Number.isFinite(
-      Number(
-        pickupCoordinates.longitude,
-      ),
-    )
+    Number.isFinite(Number(pickupCoordinates.latitude)) &&
+    Number.isFinite(Number(pickupCoordinates.longitude))
   ) {
     groupData.pickupCoordinates = {
-      latitude: Number(
-        pickupCoordinates.latitude,
-      ),
+      latitude: Number(pickupCoordinates.latitude),
 
-      longitude: Number(
-        pickupCoordinates.longitude,
-      ),
+      longitude: Number(pickupCoordinates.longitude),
     };
 
-    const pickupPoint =
-      makePoint(
-        pickupCoordinates,
-      );
+    const pickupPoint = makePoint(pickupCoordinates);
 
     if (pickupPoint) {
-      groupData.pickupPoint =
-        pickupPoint;
+      groupData.pickupPoint = pickupPoint;
     }
   }
 
+  /*
+   * -------------------------------------------------------
+   * Preserve destination coordinates if available
+   * -------------------------------------------------------
+   */
+
   if (
     destinationCoordinates &&
-    Number.isFinite(
-      Number(
-        destinationCoordinates.latitude,
-      ),
-    ) &&
-    Number.isFinite(
-      Number(
-        destinationCoordinates.longitude,
-      ),
-    )
+    Number.isFinite(Number(destinationCoordinates.latitude)) &&
+    Number.isFinite(Number(destinationCoordinates.longitude))
   ) {
-    groupData.destinationCoordinates =
-      {
-        latitude: Number(
-          destinationCoordinates.latitude,
-        ),
+    groupData.destinationCoordinates = {
+      latitude: Number(destinationCoordinates.latitude),
 
-        longitude: Number(
-          destinationCoordinates.longitude,
-        ),
-      };
+      longitude: Number(destinationCoordinates.longitude),
+    };
 
-    const destinationPoint =
-      makePoint(
-        destinationCoordinates,
-      );
+    const destinationPoint = makePoint(destinationCoordinates);
 
     if (destinationPoint) {
-      groupData.destinationPoint =
-        destinationPoint;
+      groupData.destinationPoint = destinationPoint;
     }
   }
 
@@ -793,15 +659,9 @@ const findOrCreateGroup = async (
    * -------------------------------------------------------
    */
 
-  const group =
-    await RideGroup.create(
-      groupData,
-    );
+  const group = await RideGroup.create(groupData);
 
-  console.log(
-    "[grouping] RideGroup created:",
-    group._id.toString(),
-  );
+  console.log("[grouping] RideGroup created:", group._id.toString());
 
   /*
    * -------------------------------------------------------
@@ -817,11 +677,9 @@ const findOrCreateGroup = async (
     },
     {
       $set: {
-        groupId:
-          group._id,
+        groupId: group._id,
 
-        status:
-          "grouped",
+        status: "grouped",
       },
     },
   );
@@ -836,11 +694,7 @@ const findOrCreateGroup = async (
    * -------------------------------------------------------
    */
 
-  return populateGroup(
-    RideGroup.findById(
-      group._id,
-    ),
-  );
+  return populateGroup(RideGroup.findById(group._id));
 };
 
 /*
@@ -849,52 +703,55 @@ const findOrCreateGroup = async (
 |--------------------------------------------------------------------------
 */
 
-const getAvailableGroups =
-  async (driverId) => {
-    if (!driverId) {
-      throw new Error(
-        "Driver ID is required.",
-      );
-    }
+const getAvailableGroups = async (driverId) => {
+  if (!driverId) {
+    throw new Error("Driver ID is required.");
+  }
 
-    const existingAcceptedGroup =
-      await RideGroup.findOne({
-        assignedDriver:
-          driverId,
+  /*
+   * A driver cannot accept another group while an existing
+   * ride is still active.
+   *
+   * Both "accepted" and "in_progress" are active states.
+   */
 
-        status:
-          "accepted",
-      }).select("_id");
+  const existingActiveGroup = await RideGroup.findOne({
+    assignedDriver: driverId,
 
-    if (
-      existingAcceptedGroup
-    ) {
-      return [];
-    }
+    status: {
+      $in: ["accepted", "in_progress"],
+    },
+  }).select("_id");
 
-    return populateGroup(
-      RideGroup.find({
-        status: "ready",
+  if (existingActiveGroup) {
+    return [];
+  }
 
-        $or: [
-          {
-            assignedDriver:
-              null,
+  /*
+   * Return groups waiting for a driver.
+   */
+
+  return populateGroup(
+    RideGroup.find({
+      status: "ready",
+
+      $or: [
+        {
+          assignedDriver: null,
+        },
+
+        {
+          assignedDriver: {
+            $exists: false,
           },
-
-          {
-            assignedDriver: {
-              $exists: false,
-            },
-          },
-        ],
-      }).sort({
-        departureDate: 1,
-
-        departureTime: 1,
-      }),
-    );
-  };
+        },
+      ],
+    }).sort({
+      departureDate: 1,
+      departureTime: 1,
+    }),
+  );
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -902,193 +759,444 @@ const getAvailableGroups =
 |--------------------------------------------------------------------------
 */
 
-const getGroupForRider =
-  async (riderId) => {
-    if (!riderId) {
-      throw new Error(
-        "Rider ID is required.",
-      );
-    }
+const getGroupForRider = async (riderId) => {
+  if (!riderId) {
+    throw new Error("Rider ID is required.");
+  }
 
-    const rideRequest =
-      await RideRequest.findOne({
-        rider: riderId,
-      })
-        .sort({
-          createdAt: -1,
-        })
-        .select(
-          "_id groupId status",
-        );
+  /*
+   * Get the rider's latest ride request.
+   */
 
-    if (!rideRequest) {
-      return null;
-    }
+  const rideRequest = await RideRequest.findOne({
+    rider: riderId,
+  })
+    .sort({
+      createdAt: -1,
+    })
+    .select("_id groupId status");
 
-    if (!rideRequest.groupId) {
-      return null;
-    }
+  if (!rideRequest) {
+    return null;
+  }
 
-    return populateGroup(
-      RideGroup.findById(
-        rideRequest.groupId,
-      ),
-    );
-  };
+  if (!rideRequest.groupId) {
+    return null;
+  }
+
+  /*
+   * Return the complete populated group.
+   */
+
+  return populateGroup(RideGroup.findById(rideRequest.groupId));
+};
 
 /*
 |--------------------------------------------------------------------------
 | Accept Group
 |--------------------------------------------------------------------------
+|
+| When the driver accepts:
+|
+| ready
+|   ↓
+| accepted
+|
+| At this point:
+|
+| - Driver is assigned.
+| - All RideRequests are assigned to driver.
+| - A single 4-digit OTP is generated.
+|
+| The ride does NOT start yet.
+|
+|--------------------------------------------------------------------------
 */
 
-const acceptGroup =
-  async (
-    groupId,
-    driverId,
-  ) => {
-    if (!groupId) {
-      throw new Error(
-        "Group ID is required.",
-      );
-    }
+const acceptGroup = async (groupId, driverId) => {
+  if (!groupId) {
+    throw new Error("Group ID is required.");
+  }
 
-    if (!driverId) {
-      throw new Error(
-        "Driver ID is required.",
-      );
-    }
+  if (!driverId) {
+    throw new Error("Driver ID is required.");
+  }
 
-    /*
-     * Driver can only have one
-     * accepted group.
-     */
+  /*
+   * -------------------------------------------------------
+   * Driver can only have one active group.
+   * -------------------------------------------------------
+   */
 
-    const existingAcceptedGroup =
-      await RideGroup.findOne({
-        assignedDriver:
-          driverId,
+  const existingActiveGroup = await RideGroup.findOne({
+    assignedDriver: driverId,
 
-        status:
-          "accepted",
-      }).select("_id");
+    status: {
+      $in: ["accepted", "in_progress"],
+    },
+  }).select("_id");
 
-    if (
-      existingAcceptedGroup
-    ) {
-      throw new Error(
-        "You have already accepted a ride group. You cannot accept another group.",
-      );
-    }
+  if (existingActiveGroup) {
+    throw new Error(
+      "You already have an active ride group. Complete the current ride before accepting another group.",
+    );
+  }
 
-    /*
-     * Atomically accept group.
-     */
+  /*
+   * -------------------------------------------------------
+   * Generate OTP.
+   * -------------------------------------------------------
+   */
 
-    const group =
-      await RideGroup.findOneAndUpdate(
+  const rideOtp = generateRideOtp();
+
+  /*
+   * -------------------------------------------------------
+   * Atomically accept the group.
+   *
+   * The status must still be "ready".
+   *
+   * This prevents two drivers from accepting the same
+   * group at the same time.
+   * -------------------------------------------------------
+   */
+
+  const group = await RideGroup.findOneAndUpdate(
+    {
+      _id: groupId,
+
+      status: "ready",
+
+      $or: [
         {
-          _id: groupId,
-
-          status: "ready",
-
-          $or: [
-            {
-              assignedDriver:
-                null,
-            },
-
-            {
-              assignedDriver: {
-                $exists: false,
-              },
-            },
-          ],
+          assignedDriver: null,
         },
 
         {
-          $set: {
-            assignedDriver:
-              driverId,
-
-            status:
-              "accepted",
+          assignedDriver: {
+            $exists: false,
           },
         },
+      ],
+    },
 
-        {
-          new: true,
-        },
-      );
+    {
+      $set: {
+        assignedDriver: driverId,
 
-    if (!group) {
-      throw new Error(
-        "Ride group is already accepted or does not exist.",
-      );
-    }
+        status: "accepted",
 
-    /*
-     * Assign driver to every
-     * RideRequest in the group.
-     */
+        rideOtp,
 
-    await RideRequest.updateMany(
-      {
-        _id: {
-          $in:
-            group.members,
-        },
+        rideStartedAt: null,
+
+        rideCompletedAt: null,
       },
+    },
 
-      {
-        $set: {
-          status:
-            "accepted",
+    {
+      new: true,
+    },
+  );
 
-          assignedDriver:
-            driverId,
+  if (!group) {
+    throw new Error("Ride group is already accepted or does not exist.");
+  }
 
-          groupId:
-            group._id,
-        },
+  /*
+   * -------------------------------------------------------
+   * Assign driver and accepted status to every rider's
+   * RideRequest.
+   * -------------------------------------------------------
+   */
+
+  await RideRequest.updateMany(
+    {
+      _id: {
+        $in: group.members,
       },
-    );
+    },
 
-    return populateGroup(
-      RideGroup.findById(
-        group._id,
-      ),
-    );
-  };
+    {
+      $set: {
+        status: "accepted",
+
+        assignedDriver: driverId,
+
+        groupId: group._id,
+      },
+    },
+  );
+
+  console.log(`[ride] Group ${group._id} accepted by driver ${driverId}.`);
+
+  console.log(`[ride] OTP generated for group ${group._id}.`);
+
+  /*
+   * -------------------------------------------------------
+   * Return populated group.
+   * -------------------------------------------------------
+   */
+
+  return populateGroup(RideGroup.findById(group._id));
+};
 
 /*
 |--------------------------------------------------------------------------
-| Accepted Groups For Driver
+| Verify Ride OTP And Start Ride
+|--------------------------------------------------------------------------
+|
+| Flow:
+|
+| accepted
+|    ↓
+| verify 4-digit OTP
+|    ↓
+| in_progress
+|
+| The same OTP is used for the entire RideGroup.
+|
 |--------------------------------------------------------------------------
 */
 
-const getAcceptedGroupsForDriver =
-  async (driverId) => {
-    if (!driverId) {
-      throw new Error(
-        "Driver ID is required.",
-      );
-    }
+const verifyRideOtp = async (groupId, driverId, enteredOtp) => {
+  if (!groupId) {
+    throw new Error("Group ID is required.");
+  }
 
-    return populateGroup(
-      RideGroup.find({
-        assignedDriver:
-          driverId,
+  if (!driverId) {
+    throw new Error("Driver ID is required.");
+  }
 
-        status:
-          "accepted",
-      }).sort({
-        departureDate: 1,
+  /*
+   * Normalize OTP to a string.
+   */
 
-        departureTime: 1,
-      }),
+  const otp = String(enteredOtp || "").trim();
+
+  /*
+   * OTP must contain exactly four digits.
+   */
+
+  if (!/^\d{4}$/.test(otp)) {
+    throw new Error("OTP must be exactly 4 digits.");
+  }
+
+  /*
+   * -------------------------------------------------------
+   * Find group assigned to this driver.
+   * -------------------------------------------------------
+   */
+
+  const group = await RideGroup.findOne({
+    _id: groupId,
+
+    assignedDriver: driverId,
+
+    status: "accepted",
+  });
+
+  if (!group) {
+    throw new Error("Accepted ride group not found.");
+  }
+
+  /*
+   * -------------------------------------------------------
+   * Verify OTP.
+   * -------------------------------------------------------
+   */
+
+  if (!group.rideOtp || group.rideOtp !== otp) {
+    throw new Error("Incorrect ride OTP.");
+  }
+
+  /*
+   * -------------------------------------------------------
+   * Start the ride.
+   * -------------------------------------------------------
+   */
+
+  const rideStartedAt = new Date();
+
+  group.status = "in_progress";
+
+  group.rideStartedAt = rideStartedAt;
+
+  await group.save();
+
+  /*
+   * -------------------------------------------------------
+   * Update every rider's RideRequest.
+   * -------------------------------------------------------
+   */
+
+  await RideRequest.updateMany(
+    {
+      _id: {
+        $in: group.members,
+      },
+
+      assignedDriver: driverId,
+    },
+
+    {
+      $set: {
+        status: "in_progress",
+
+        assignedDriver: driverId,
+
+        groupId: group._id,
+      },
+    },
+  );
+
+  console.log(`[ride] Group ${group._id} started by driver ${driverId}.`);
+
+  /*
+   * -------------------------------------------------------
+   * Return updated populated group.
+   * -------------------------------------------------------
+   */
+
+  return populateGroup(RideGroup.findById(group._id));
+};
+
+/*
+|--------------------------------------------------------------------------
+| Complete Ride
+|--------------------------------------------------------------------------
+|
+| Flow:
+|
+| in_progress
+|      ↓
+| completed
+|
+| All riders belonging to the group are also marked completed.
+|
+|--------------------------------------------------------------------------
+*/
+
+const completeRide = async (groupId, driverId) => {
+  if (!groupId) {
+    throw new Error("Group ID is required.");
+  }
+
+  if (!driverId) {
+    throw new Error("Driver ID is required.");
+  }
+
+  /*
+   * -------------------------------------------------------
+   * Only the assigned driver can complete the group.
+   *
+   * The ride must already be in progress.
+   * -------------------------------------------------------
+   */
+
+  const group = await RideGroup.findOne({
+    _id: groupId,
+
+    assignedDriver: driverId,
+
+    status: "in_progress",
+  });
+
+  if (!group) {
+    throw new Error(
+      "Ride is not in progress or you are not the assigned driver.",
     );
-  };
+  }
+
+  /*
+   * -------------------------------------------------------
+   * Save completion time.
+   * -------------------------------------------------------
+   */
+
+  const rideCompletedAt = new Date();
+
+  group.status = "completed";
+
+  group.rideCompletedAt = rideCompletedAt;
+
+  await group.save();
+
+  /*
+   * -------------------------------------------------------
+   * Mark every RideRequest in this group as completed.
+   * -------------------------------------------------------
+   */
+
+  const updateResult = await RideRequest.updateMany(
+    {
+      _id: {
+        $in: group.members,
+      },
+
+      assignedDriver: driverId,
+    },
+
+    {
+      $set: {
+        status: "completed",
+
+        assignedDriver: driverId,
+
+        groupId: group._id,
+      },
+    },
+  );
+
+  console.log(`[ride] Group ${group._id} completed by driver ${driverId}.`);
+
+  console.log(
+    `[ride] ${updateResult.modifiedCount} RideRequests marked completed.`,
+  );
+
+  /*
+   * -------------------------------------------------------
+   * Return completed group.
+   * -------------------------------------------------------
+   */
+
+  return populateGroup(RideGroup.findById(group._id));
+};
+
+/*
+|--------------------------------------------------------------------------
+| Accepted / Active Groups For Driver
+|--------------------------------------------------------------------------
+|
+| This returns both:
+|
+| accepted
+| in_progress
+|
+| This is useful because the driver needs to see the same ride
+| after accepting it and after starting it.
+|
+|--------------------------------------------------------------------------
+*/
+
+const getAcceptedGroupsForDriver = async (driverId) => {
+  if (!driverId) {
+    throw new Error("Driver ID is required.");
+  }
+
+  return populateGroup(
+    RideGroup.find({
+      assignedDriver: driverId,
+
+      status: {
+        $in: ["accepted", "in_progress"],
+      },
+    }).sort({
+      departureDate: 1,
+      departureTime: 1,
+    }),
+  );
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -1097,8 +1205,14 @@ const getAcceptedGroupsForDriver =
 */
 
 module.exports = {
+  /*
+   * Existing grouping functionality
+   */
   findOrCreateGroup,
 
+  /*
+   * Driver group functionality
+   */
   getAvailableGroups,
 
   getGroupForRider,
@@ -1106,4 +1220,11 @@ module.exports = {
   acceptGroup,
 
   getAcceptedGroupsForDriver,
+
+  /*
+   * New ride lifecycle functionality
+   */
+  verifyRideOtp,
+
+  completeRide,
 };

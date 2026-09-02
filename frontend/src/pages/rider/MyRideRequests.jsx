@@ -2,13 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import {
-  ArrowLeft,
-  RefreshCw,
-  Trash2,
-  Ban,
-  AlertTriangle,
-} from "lucide-react";
+import { ArrowLeft, RefreshCw, Trash2, Ban, AlertTriangle } from "lucide-react";
 
 import {
   getMyRideRequests,
@@ -25,7 +19,6 @@ function MyRideRequests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Confirmation modal state
   const [confirmModal, setConfirmModal] = useState({
     open: false,
     type: null,
@@ -33,6 +26,45 @@ function MyRideRequests() {
   });
 
   const [actionLoading, setActionLoading] = useState(false);
+
+  /*
+   * --------------------------------------------------
+   * NORMALIZE API RESPONSE
+   * --------------------------------------------------
+   */
+  const handleViewDriverDetails = (request) => {
+    navigate(`/driver-details/${request._id}`, {
+      state: {
+        request,
+      },
+    });
+  };
+
+  const extractRequests = (responseData) => {
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+
+    if (Array.isArray(responseData?.data)) {
+      return responseData.data;
+    }
+
+    if (Array.isArray(responseData?.rideRequests)) {
+      return responseData.rideRequests;
+    }
+
+    if (Array.isArray(responseData?.requests)) {
+      return responseData.requests;
+    }
+
+    return [];
+  };
+
+  /*
+   * --------------------------------------------------
+   * LOAD REQUESTS
+   * --------------------------------------------------
+   */
 
   const loadRequests = async (showLoader = false) => {
     try {
@@ -42,23 +74,18 @@ function MyRideRequests() {
 
       setError("");
 
-      const res = await getMyRideRequests();
+      const response = await getMyRideRequests();
 
-      console.log("🚗 UPDATED RIDE DATA:", res.data);
+      console.log("🚗 UPDATED RIDE DATA:", response.data);
 
-      setRequests(
-        res.data?.data ||
-          res.data?.rideRequests ||
-          res.data?.requests ||
-          res.data ||
-          [],
-      );
+      const nextRequests = extractRequests(response.data);
+
+      setRequests(nextRequests);
     } catch (err) {
       console.error("❌ Load requests failed:", err);
 
       setError(
-        err.response?.data?.message ||
-          "Failed to load your ride requests.",
+        err.response?.data?.message || "Failed to load your ride requests.",
       );
     } finally {
       if (showLoader) {
@@ -67,6 +94,30 @@ function MyRideRequests() {
     }
   };
 
+  /*
+   * --------------------------------------------------
+   * INITIAL LOAD + STATUS POLLING
+   * --------------------------------------------------
+   *
+   * This is important for the OTP flow:
+   *
+   * DRIVER ACCEPTS
+   *       ↓
+   * rider request becomes accepted
+   *       ↓
+   * groupId.rideOtp becomes available
+   *       ↓
+   * card shows OTP
+   *
+   * DRIVER VERIFIES OTP
+   *       ↓
+   * rider request becomes in_progress
+   *
+   * DRIVER COMPLETES
+   *       ↓
+   * rider request becomes completed
+   */
+
   useEffect(() => {
     loadRequests(true);
 
@@ -74,12 +125,16 @@ function MyRideRequests() {
       loadRequests(false);
     }, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
-  // --------------------------------------------------
-  // EDIT
-  // --------------------------------------------------
+  /*
+   * --------------------------------------------------
+   * EDIT
+   * --------------------------------------------------
+   */
 
   const handleEdit = () => {
     toast.info("Edit ride is currently not available.", {
@@ -90,9 +145,11 @@ function MyRideRequests() {
     });
   };
 
-  // --------------------------------------------------
-  // OPEN CONFIRMATION MODAL
-  // --------------------------------------------------
+  /*
+   * --------------------------------------------------
+   * OPEN CONFIRMATION
+   * --------------------------------------------------
+   */
 
   const openConfirmModal = (type, id) => {
     setConfirmModal({
@@ -102,12 +159,16 @@ function MyRideRequests() {
     });
   };
 
-  // --------------------------------------------------
-  // CLOSE CONFIRMATION MODAL
-  // --------------------------------------------------
+  /*
+   * --------------------------------------------------
+   * CLOSE CONFIRMATION
+   * --------------------------------------------------
+   */
 
   const closeConfirmModal = () => {
-    if (actionLoading) return;
+    if (actionLoading) {
+      return;
+    }
 
     setConfirmModal({
       open: false,
@@ -116,25 +177,31 @@ function MyRideRequests() {
     });
   };
 
-  // --------------------------------------------------
-  // CANCEL RIDE
-  // --------------------------------------------------
+  /*
+   * --------------------------------------------------
+   * CANCEL
+   * --------------------------------------------------
+   */
 
   const handleCancel = (id) => {
     openConfirmModal("cancel", id);
   };
 
-  // --------------------------------------------------
-  // DELETE RIDE
-  // --------------------------------------------------
+  /*
+   * --------------------------------------------------
+   * DELETE
+   * --------------------------------------------------
+   */
 
   const handleDelete = (id) => {
     openConfirmModal("delete", id);
   };
 
-  // --------------------------------------------------
-  // CONFIRM ACTION
-  // --------------------------------------------------
+  /*
+   * --------------------------------------------------
+   * CONFIRM ACTION
+   * --------------------------------------------------
+   */
 
   const handleConfirmAction = async () => {
     if (!confirmModal.id || !confirmModal.type) {
@@ -170,10 +237,7 @@ function MyRideRequests() {
 
       await loadRequests(false);
     } catch (err) {
-      console.error(
-        `${confirmModal.type} ride failed:`,
-        err,
-      );
+      console.error(`${confirmModal.type} ride failed:`, err);
 
       toast.error(
         err.response?.data?.message ||
@@ -187,12 +251,12 @@ function MyRideRequests() {
       setActionLoading(false);
     }
   };
+
   const isDelete = confirmModal.type === "delete";
+
   const isCancel = confirmModal.type === "cancel";
 
-  const modalTitle = isDelete
-    ? "Delete this ride?"
-    : "Cancel this ride?";
+  const modalTitle = isDelete ? "Delete this ride?" : "Cancel this ride?";
 
   const modalMessage = isDelete
     ? "This ride request will be permanently deleted. This action cannot be undone."
@@ -201,9 +265,9 @@ function MyRideRequests() {
   return (
     <div className='min-h-screen bg-gray-100'>
       <div className='max-w-7xl mx-auto px-6 py-8'>
-        {/* --------------------------------------------------
+        {/* ==================================================
             HEADER
-        -------------------------------------------------- */}
+        ================================================== */}
 
         <div className='flex items-center justify-between mb-10'>
           <div className='flex items-center gap-5'>
@@ -225,57 +289,47 @@ function MyRideRequests() {
               </h1>
 
               <p className='text-gray-500 mt-2'>
-                View, cancel, or remove your posted ride requests.
+                View your ride status, driver, OTP, and completed rides.
               </p>
             </div>
           </div>
 
           <div className='hidden md:flex items-center gap-3'>
             <div className='bg-white rounded-2xl shadow-md px-6 py-4'>
-              <p className='text-sm text-gray-500'>
-                Active Requests
-              </p>
+              <p className='text-sm text-gray-500'>Active Requests</p>
 
-              <h2 className='text-3xl font-bold'>
-                {requests.length}
-              </h2>
+              <h2 className='text-3xl font-bold'>{requests.length}</h2>
             </div>
           </div>
         </div>
 
-        {/* --------------------------------------------------
+        {/* ==================================================
             LOADING
-        -------------------------------------------------- */}
+        ================================================== */}
 
         {loading && (
           <div className='bg-white rounded-3xl shadow-lg p-16 text-center'>
             <div className='flex justify-center'>
-              <div className='w-14 h-14 rounded-full border-4 border-yellow-400 border-t-transparent animate-spin'></div>
+              <div className='w-14 h-14 rounded-full border-4 border-yellow-400 border-t-transparent animate-spin' />
             </div>
 
-            <h2 className='text-2xl font-bold mt-8'>
-              Loading Requests...
-            </h2>
+            <h2 className='text-2xl font-bold mt-8'>Loading Requests...</h2>
 
             <p className='text-gray-500 mt-3'>
-              Please wait while we fetch your active requests.
+              Please wait while we fetch your ride requests.
             </p>
           </div>
         )}
 
-        {/* --------------------------------------------------
+        {/* ==================================================
             ERROR
-        -------------------------------------------------- */}
+        ================================================== */}
 
         {!loading && error && (
           <div className='bg-red-100 border border-red-200 rounded-3xl p-8'>
-            <h2 className='text-2xl font-bold text-red-700'>
-              Failed to Load
-            </h2>
+            <h2 className='text-2xl font-bold text-red-700'>Failed to Load</h2>
 
-            <p className='mt-3 text-red-600'>
-              {error}
-            </p>
+            <p className='mt-3 text-red-600'>{error}</p>
 
             <button
               type='button'
@@ -288,82 +342,93 @@ function MyRideRequests() {
           </div>
         )}
 
-        {/* --------------------------------------------------
-            EMPTY STATE
-        -------------------------------------------------- */}
+        {/* ==================================================
+            EMPTY
+        ================================================== */}
 
-        {!loading &&
-          !error &&
-          requests.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className='bg-white rounded-3xl shadow-lg p-16 text-center'
+        {!loading && !error && requests.length === 0 && (
+          <motion.div
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            className='bg-white rounded-3xl shadow-lg p-16 text-center'
+          >
+            <div className='text-7xl'>🚗</div>
+
+            <h2 className='text-3xl font-bold mt-6'>No Ride Requests Found</h2>
+
+            <p className='text-gray-500 mt-3'>
+              You haven't posted any active ride requests.
+            </p>
+
+            <button
+              type='button'
+              onClick={() => navigate("/dashboard")}
+              className='mt-8 bg-yellow-400 hover:bg-yellow-500 px-8 py-3 rounded-xl font-semibold transition cursor-pointer'
             >
-              <div className='text-7xl'>🚗</div>
+              Request a Ride Now
+            </button>
+          </motion.div>
+        )}
 
-              <h2 className='text-3xl font-bold mt-6'>
-                No Ride Requests Found
-              </h2>
-
-              <p className='text-gray-500 mt-3'>
-                You haven't posted any active ride requests.
-              </p>
-
-              <button
-                type='button'
-                onClick={() => navigate("/dashboard")}
-                className='mt-8 bg-yellow-400 hover:bg-yellow-500 px-8 py-3 rounded-xl font-semibold transition cursor-pointer'
-              >
-                Request a Ride Now
-              </button>
-            </motion.div>
-          )}
-
-        {/* --------------------------------------------------
+        {/* ==================================================
             RIDE CARDS
-        -------------------------------------------------- */}
+        ================================================== */}
 
-        {!loading &&
-          !error &&
-          requests.length > 0 && (
-            <div className='grid md:grid-cols-2 xl:grid-cols-3 gap-6'>
-              {requests.map((request) => (
-                <RideRequestCard
-                  key={request._id || request.id}
-                  request={request}
-                  onEdit={handleEdit}
-                  onCancel={handleCancel}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
-          )}
+        {!loading && !error && requests.length > 0 && (
+          <div className='grid md:grid-cols-2 xl:grid-cols-3 gap-6'>
+            {requests.map((request) => (
+              <RideRequestCard
+                key={request._id || request.id}
+                request={request}
+                onEdit={handleEdit}
+                onCancel={handleCancel}
+                onDelete={handleDelete}
+                onViewDriverDetails={handleViewDriverDetails}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ==================================================
-          CUSTOM CONFIRMATION MODAL
+          CONFIRMATION MODAL
       ================================================== */}
 
       <AnimatePresence>
         {confirmModal.open && (
           <motion.div
             className='fixed inset-0 z-[9999] flex items-center justify-center px-4'
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            exit={{
+              opacity: 0,
+            }}
           >
             {/* BACKDROP */}
 
             <motion.div
               className='absolute inset-0 bg-black/40 backdrop-blur-md'
               onClick={closeConfirmModal}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              exit={{
+                opacity: 0,
+              }}
             />
 
-            {/* MODAL BOX */}
+            {/* MODAL */}
 
             <motion.div
               initial={{
@@ -385,7 +450,7 @@ function MyRideRequests() {
                 duration: 0.2,
               }}
               className='relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl p-7 sm:p-8'
-              onClick={(e) => e.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
             >
               {/* ICON */}
 
@@ -396,18 +461,12 @@ function MyRideRequests() {
                     : "bg-orange-100 text-orange-600"
                 }`}
               >
-                {isDelete ? (
-                  <Trash2 size={27} />
-                ) : (
-                  <Ban size={27} />
-                )}
+                {isDelete ? <Trash2 size={27} /> : <Ban size={27} />}
               </div>
 
               {/* TITLE */}
 
-              <h2 className='text-2xl font-bold text-gray-900'>
-                {modalTitle}
-              </h2>
+              <h2 className='text-2xl font-bold text-gray-900'>{modalTitle}</h2>
 
               {/* MESSAGE */}
 
@@ -424,8 +483,8 @@ function MyRideRequests() {
                 />
 
                 <p className='text-sm text-gray-600'>
-                  Please make sure you want to continue
-                  before confirming this action.
+                  Please make sure you want to continue before confirming this
+                  action.
                 </p>
               </div>
 

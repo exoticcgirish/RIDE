@@ -23,10 +23,6 @@ import {
 function DriverDashboard() {
   const navigate = useNavigate();
 
-  // =========================================================
-  // USER / DRIVER INFORMATION
-  // =========================================================
-
   const getStoredUser = () => {
     try {
       return JSON.parse(localStorage.getItem("user") || "null");
@@ -37,18 +33,6 @@ function DriverDashboard() {
   };
 
   const user = getStoredUser();
-
-  const getCurrentDriverId = () => {
-    return user?._id || user?.id || user?.userId || "unknown-driver";
-  };
-
-  const driverId = getCurrentDriverId();
-
-  const ACCEPTED_GROUP_KEY = `acceptedRideGroup_${driverId}`;
-
-  // =========================================================
-  // USER NAME / AVATAR
-  // =========================================================
 
   const getFirstName = () => {
     const firstName = user?.firstName || user?.first_name || user?.firstname;
@@ -68,36 +52,20 @@ function DriverDashboard() {
   };
 
   const firstName = getFirstName();
-
   const profileInitial = firstName.charAt(0).toUpperCase() || "D";
 
-  // =========================================================
-  // STATE
-  // =========================================================
-
   const [groups, setGroups] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
-
   const [acceptingId, setAcceptingId] = useState(null);
+  const [acceptedGroupId, setAcceptedGroupId] = useState(null);
 
-  const [acceptedGroupId, setAcceptedGroupId] = useState(() => {
-    return localStorage.getItem(ACCEPTED_GROUP_KEY) || null;
-  });
-
-  // Custom modal state
   const [modal, setModal] = useState({
     open: false,
     type: "success",
     title: "",
     message: "",
   });
-
-  // =========================================================
-  // MODAL HELPERS
-  // =========================================================
 
   const showSuccessModal = (title, message) => {
     setModal({
@@ -124,22 +92,12 @@ function DriverDashboard() {
     }));
   };
 
-  // =========================================================
-  // LOGOUT
-  // =========================================================
-
   const handleLogout = () => {
-    localStorage.removeItem(ACCEPTED_GROUP_KEY);
-
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
     navigate("/login");
   };
-
-  // =========================================================
-  // FETCH GROUPS
-  // =========================================================
 
   const fetchGroups = async () => {
     try {
@@ -148,16 +106,26 @@ function DriverDashboard() {
 
       const response = await getAvailableRideGroups();
 
-      const availableGroups = response.data?.data || [];
+      const responseData = response?.data;
 
-      console.log("Available groups:", availableGroups);
+      let availableGroups = [];
+
+      if (Array.isArray(responseData?.data)) {
+        availableGroups = responseData.data;
+      } else if (Array.isArray(responseData)) {
+        availableGroups = responseData;
+      } else if (Array.isArray(responseData?.groups)) {
+        availableGroups = responseData.groups;
+      }
+
+      console.log("Available groups from API:", availableGroups);
 
       setGroups(availableGroups);
     } catch (error) {
       console.error("Fetch groups error:", error);
 
       const message =
-        error.response?.data?.message ||
+        error?.response?.data?.message ||
         "Failed to load available ride groups.";
 
       setError(message);
@@ -165,10 +133,6 @@ function DriverDashboard() {
       setLoading(false);
     }
   };
-
-  // =========================================================
-  // UPDATE DRIVER LOCATION
-  // =========================================================
 
   const updateCurrentLocation = async (rideRequestId) => {
     if (!navigator.geolocation) {
@@ -179,7 +143,6 @@ function DriverDashboard() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const latitude = position.coords.latitude;
-
         const longitude = position.coords.longitude;
 
         try {
@@ -189,13 +152,10 @@ function DriverDashboard() {
             "http://localhost:7001/api/drivers/location",
             {
               method: "PUT",
-
               headers: {
                 "Content-Type": "application/json",
-
                 Authorization: `Bearer ${token}`,
               },
-
               body: JSON.stringify({
                 rideRequestId,
                 latitude,
@@ -208,7 +168,6 @@ function DriverDashboard() {
 
           if (!response.ok) {
             console.error("Location update failed:", data);
-
             return;
           }
 
@@ -220,11 +179,9 @@ function DriverDashboard() {
           console.error("Location update error:", error);
         }
       },
-
       (error) => {
         console.error("Geolocation error:", error);
       },
-
       {
         enableHighAccuracy: true,
         timeout: 10000,
@@ -233,27 +190,12 @@ function DriverDashboard() {
     );
   };
 
-  // =========================================================
-  // INITIAL LOAD
-  // =========================================================
-
   useEffect(() => {
     fetchGroups();
   }, []);
 
-  // =========================================================
-  // ACCEPT GROUP
-  // =========================================================
-
   const handleAcceptGroup = async (groupId) => {
-    if (acceptedGroupId !== null) {
-      console.log("Driver already accepted group:", acceptedGroupId);
-
-      return;
-    }
-
-    // Prevent double click
-    if (acceptingId !== null) {
+    if (!groupId || acceptingId !== null) {
       return;
     }
 
@@ -264,40 +206,36 @@ function DriverDashboard() {
 
       const response = await acceptRideGroup(groupId);
 
-      console.log("Accept response:", response.data);
+      console.log("Accept response:", response?.data);
 
       setAcceptedGroupId(groupId);
 
-      localStorage.setItem(ACCEPTED_GROUP_KEY, groupId);
+      setGroups((previousGroups) =>
+        previousGroups.map((group) =>
+          group._id === groupId
+            ? {
+                ...group,
+                status: "assigned",
+                assignedDriver: user?._id || user?.id,
+              }
+            : group,
+        ),
+      );
 
-      setGroups((previousGroups) => {
-        return previousGroups.map((group) => ({
-          ...group,
-
-          status: group._id === groupId ? "accepted" : group.status,
-        }));
-      });
-
-      // Custom success modal instead of browser alert
       showSuccessModal(
         "Ride Group Accepted",
         "The ride group has been accepted successfully. You can now manage this group from your accepted groups.",
       );
     } catch (error) {
       console.error("ACCEPT GROUP ERROR:", error);
-
-      console.error("Status:", error.response?.status);
-
-      console.error("Response:", error.response?.data);
-
-      // If API failed, allow accepting again
-      setAcceptedGroupId(localStorage.getItem(ACCEPTED_GROUP_KEY) || null);
+      console.error("Status:", error?.response?.status);
+      console.error("Response:", error?.response?.data);
 
       showErrorModal(
         "Unable to Accept Group",
-        error.response?.data?.message ||
+        error?.response?.data?.message ||
           `Failed to accept ride group. Status: ${
-            error.response?.status || "unknown"
+            error?.response?.status || "unknown"
           }`,
       );
     } finally {
@@ -305,9 +243,75 @@ function DriverDashboard() {
     }
   };
 
-  // =========================================================
-  // STATISTICS
-  // =========================================================
+  const getGroupStatus = (group) => {
+    const rawStatus = String(group?.status || "ready").toLowerCase();
+
+    if (group?._id === acceptedGroupId) {
+      return "accepted";
+    }
+
+    if (
+      rawStatus === "available" ||
+      rawStatus === "ready" ||
+      rawStatus === "pending"
+    ) {
+      return "ready";
+    }
+
+    if (rawStatus === "unavailable" || rawStatus === "not_available") {
+      return "unavailable";
+    }
+
+    if (rawStatus === "completed" || rawStatus === "complete") {
+      return "completed";
+    }
+
+    if (rawStatus === "cancelled" || rawStatus === "canceled") {
+      return "cancelled";
+    }
+
+    if (rawStatus === "accepted" || rawStatus === "assigned") {
+      return "accepted";
+    }
+
+    return rawStatus;
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "accepted":
+        return "Accepted";
+      case "unavailable":
+        return "Unavailable";
+      case "completed":
+        return "Completed";
+      case "cancelled":
+        return "Cancelled";
+      case "ready":
+        return "Ready";
+      default:
+        return status || "Ready";
+    }
+  };
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case "accepted":
+        return "bg-green-50 text-green-600 border border-green-100";
+
+      case "unavailable":
+        return "bg-gray-100 text-gray-500 border border-gray-200";
+
+      case "completed":
+        return "bg-purple-50 text-purple-600 border border-purple-100";
+
+      case "cancelled":
+        return "bg-red-50 text-red-600 border border-red-100";
+
+      default:
+        return "bg-blue-50 text-blue-600 border border-blue-100";
+    }
+  };
 
   const totalRiders = groups.reduce(
     (total, group) => total + (group.members?.length || 0),
@@ -319,25 +323,23 @@ function DriverDashboard() {
     0,
   );
 
-  // =========================================================
-  // FORMAT DATE
-  // =========================================================
-
   const formatDate = (date) => {
     if (!date) {
       return "N/A";
     }
 
-    return new Date(date).toLocaleDateString("en-IN", {
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "N/A";
+    }
+
+    return parsedDate.toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
   };
-
-  // =========================================================
-  // SHORTEN LONG LOCATION
-  // =========================================================
 
   const getShortLocation = (location, maxLength = 90) => {
     if (!location) {
@@ -350,44 +352,27 @@ function DriverDashboard() {
       return text;
     }
 
-    return text.slice(0, maxLength).trim() + "...";
+    return `${text.slice(0, maxLength).trim()}...`;
   };
-
-  // =========================================================
-  // MODAL CONTINUE
-  // =========================================================
 
   const handleModalAction = () => {
     if (modal.type === "success") {
       closeModal();
-
       navigate("/driver/accepted-groups");
-
       return;
     }
 
     closeModal();
   };
 
-  // =========================================================
-  // UI
-  // =========================================================
-
   return (
     <div className='min-h-screen bg-[#f7f8fa] text-[#172033]'>
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
-
       <header className='sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='h-[76px] flex items-center justify-between'>
-            {/* LOGO */}
-
             <div>
               <h1 className='text-2xl sm:text-3xl font-extrabold tracking-tight leading-none'>
                 <span className='text-[#172033]'>Ride</span>
-
                 <span className='text-[#fdbd00]'>Link</span>
               </h1>
 
@@ -396,21 +381,14 @@ function DriverDashboard() {
               </p>
             </div>
 
-            {/* HEADER ACTIONS */}
-
             <div className='flex items-center gap-2 sm:gap-3'>
-              {/* ONLINE */}
-
               <div className='hidden sm:flex items-center gap-2 bg-green-50 border border-green-100 text-green-600 px-4 py-2.5 rounded-full text-sm font-bold'>
                 <span className='relative flex h-2.5 w-2.5'>
                   <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-50' />
-
                   <span className='relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500' />
                 </span>
                 Online
               </div>
-
-              {/* REFRESH */}
 
               <button
                 type='button'
@@ -427,8 +405,6 @@ function DriverDashboard() {
                 />
               </button>
 
-              {/* PROFILE */}
-
               <button
                 type='button'
                 onClick={() => navigate("/driver/profile")}
@@ -437,8 +413,6 @@ function DriverDashboard() {
               >
                 {profileInitial}
               </button>
-
-              {/* LOGOUT */}
 
               <button
                 type='button'
@@ -452,13 +426,7 @@ function DriverDashboard() {
         </div>
       </header>
 
-      {/* =====================================================
-          MAIN
-      ====================================================== */}
-
       <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-9'>
-        {/* PAGE HEADER */}
-
         <div className='flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mb-8'>
           <div>
             <div className='flex items-center gap-2 mb-2'>
@@ -489,13 +457,7 @@ function DriverDashboard() {
           </button>
         </div>
 
-        {/* ===================================================
-            STATS
-        ==================================================== */}
-
         <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8'>
-          {/* GROUPS */}
-
           <div className='group bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200'>
             <div className='flex items-start justify-between'>
               <div>
@@ -518,8 +480,6 @@ function DriverDashboard() {
             </p>
           </div>
 
-          {/* RIDERS */}
-
           <div className='group bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200'>
             <div className='flex items-start justify-between'>
               <div>
@@ -540,8 +500,6 @@ function DriverDashboard() {
             </p>
           </div>
 
-          {/* SEATS */}
-
           <div className='bg-[#172033] rounded-2xl p-5 sm:p-6 shadow-md text-white hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200'>
             <div className='flex items-start justify-between'>
               <div>
@@ -560,10 +518,6 @@ function DriverDashboard() {
             </p>
           </div>
         </div>
-
-        {/* ===================================================
-            ERROR
-        ==================================================== */}
 
         {error && (
           <div className='mb-6 rounded-2xl bg-red-50 border border-red-100 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
@@ -589,10 +543,6 @@ function DriverDashboard() {
           </div>
         )}
 
-        {/* ===================================================
-            LOADING
-        ==================================================== */}
-
         {loading && (
           <div className='bg-white border border-gray-100 rounded-3xl p-12 sm:p-16 text-center shadow-sm'>
             <div className='w-14 h-14 mx-auto rounded-2xl bg-[#fff5d6] flex items-center justify-center'>
@@ -606,10 +556,6 @@ function DriverDashboard() {
             </p>
           </div>
         )}
-
-        {/* ===================================================
-            EMPTY
-        ==================================================== */}
 
         {!loading && !error && groups.length === 0 && (
           <div className='bg-white border border-gray-100 rounded-3xl p-10 sm:p-16 text-center shadow-sm'>
@@ -636,28 +582,27 @@ function DriverDashboard() {
           </div>
         )}
 
-        {/* ===================================================
-            GROUPS
-        ==================================================== */}
-
         {!loading && !error && groups.length > 0 && (
           <div className='space-y-6'>
             {groups.map((group) => {
-              const isAccepted = group._id === acceptedGroupId;
-
+              const status = getGroupStatus(group);
+              const isAccepted = status === "accepted";
               const isAccepting = acceptingId === group._id;
 
-              const isUnavailable = acceptedGroupId !== null && !isAccepted;
+              const isUnavailable = status === "unavailable";
+
+              const isDisabledStatus =
+                isUnavailable ||
+                status === "completed" ||
+                status === "cancelled";
 
               return (
                 <div
                   key={group._id}
-                  className='bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden'
+                  className={`bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
+                    isDisabledStatus ? "opacity-90" : ""
+                  }`}
                 >
-                  {/* =====================================
-                        GROUP HEADER
-                    ====================================== */}
-
                   <div className='px-5 sm:px-7 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
                     <div className='flex items-center gap-4 min-w-0'>
                       <div className='w-12 h-12 rounded-2xl bg-[#fff5d6] flex items-center justify-center shrink-0'>
@@ -676,29 +621,15 @@ function DriverDashboard() {
                     </div>
 
                     <span
-                      className={`w-fit px-4 py-2 rounded-full text-xs font-extrabold capitalize ${
-                        isAccepted
-                          ? "bg-green-50 text-green-600 border border-green-100"
-                          : isUnavailable
-                            ? "bg-gray-100 text-gray-500 border border-gray-200"
-                            : "bg-blue-50 text-blue-600 border border-blue-100"
-                      }`}
+                      className={`w-fit px-4 py-2 rounded-full text-xs font-extrabold capitalize ${getStatusClass(
+                        status,
+                      )}`}
                     >
-                      {isAccepted
-                        ? "Accepted"
-                        : isUnavailable
-                          ? "Unavailable"
-                          : group.status || "Ready"}
+                      {getStatusLabel(status)}
                     </span>
                   </div>
 
-                  {/* =====================================
-                        GROUP CONTENT
-                    ====================================== */}
-
                   <div className='p-5 sm:p-7'>
-                    {/* ROUTE */}
-
                     <div className='mb-7'>
                       <div className='flex items-center justify-between mb-5'>
                         <p className='text-xs text-gray-400 font-extrabold uppercase tracking-wider'>
@@ -709,8 +640,6 @@ function DriverDashboard() {
                       </div>
 
                       <div className='flex gap-4'>
-                        {/* ROUTE LINE */}
-
                         <div className='flex flex-col items-center pt-1 shrink-0'>
                           <div className='w-3.5 h-3.5 rounded-full bg-green-500 ring-4 ring-green-50' />
 
@@ -719,11 +648,7 @@ function DriverDashboard() {
                           <div className='w-3.5 h-3.5 rounded-full bg-red-500 ring-4 ring-red-50' />
                         </div>
 
-                        {/* LOCATIONS */}
-
                         <div className='flex-1 min-w-0'>
-                          {/* PICKUP */}
-
                           <div className='min-w-0'>
                             <p className='text-[11px] text-gray-400 font-bold tracking-wide'>
                               PICKUP
@@ -736,8 +661,6 @@ function DriverDashboard() {
                               {getShortLocation(group.pickupLocation)}
                             </p>
                           </div>
-
-                          {/* DESTINATION */}
 
                           <div className='mt-7 min-w-0'>
                             <p className='text-[11px] text-gray-400 font-bold tracking-wide'>
@@ -755,13 +678,7 @@ function DriverDashboard() {
                       </div>
                     </div>
 
-                    {/* =====================================
-                          GROUP DETAILS
-                      ====================================== */}
-
                     <div className='grid grid-cols-2 lg:grid-cols-4 gap-3'>
-                      {/* DATE */}
-
                       <div className='bg-gray-50 hover:bg-gray-100 rounded-2xl p-4 transition'>
                         <div className='flex items-center gap-2'>
                           <CalendarDays size={17} className='text-[#d99f00]' />
@@ -775,8 +692,6 @@ function DriverDashboard() {
                           {formatDate(group.departureDate)}
                         </p>
                       </div>
-
-                      {/* TIME */}
 
                       <div className='bg-gray-50 hover:bg-gray-100 rounded-2xl p-4 transition'>
                         <div className='flex items-center gap-2'>
@@ -792,8 +707,6 @@ function DriverDashboard() {
                         </p>
                       </div>
 
-                      {/* MEMBERS */}
-
                       <div className='bg-gray-50 hover:bg-gray-100 rounded-2xl p-4 transition'>
                         <div className='flex items-center gap-2'>
                           <Users size={17} className='text-[#d99f00]' />
@@ -807,8 +720,6 @@ function DriverDashboard() {
                           {group.members?.length || 0}
                         </p>
                       </div>
-
-                      {/* SEATS */}
 
                       <div className='bg-gray-50 hover:bg-gray-100 rounded-2xl p-4 transition'>
                         <div className='flex items-center gap-2'>
@@ -824,10 +735,6 @@ function DriverDashboard() {
                         </p>
                       </div>
                     </div>
-
-                    {/* =====================================
-                          MEMBERS
-                      ====================================== */}
 
                     <div className='mt-7 pt-7 border-t border-gray-100'>
                       <div className='flex items-center justify-between mb-4'>
@@ -895,10 +802,6 @@ function DriverDashboard() {
                       </div>
                     </div>
 
-                    {/* =====================================
-                          FOOTER
-                      ====================================== */}
-
                     <div className='mt-7 pt-6 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
                       <div className='flex items-center gap-3'>
                         <div className='w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center'>
@@ -911,27 +814,21 @@ function DriverDashboard() {
                           </p>
 
                           <p className='font-extrabold text-sm mt-0.5 capitalize'>
-                            {isAccepted
-                              ? "Accepted"
-                              : isUnavailable
-                                ? "Unavailable"
-                                : group.status || "Ready"}
+                            {getStatusLabel(status)}
                           </p>
                         </div>
                       </div>
 
-                      {/* ACCEPT */}
-
                       <button
                         type='button'
                         disabled={
-                          acceptingId !== null || acceptedGroupId !== null
+                          acceptingId !== null || isDisabledStatus || isAccepted
                         }
                         onClick={() => handleAcceptGroup(group._id)}
                         className={`w-full sm:w-auto min-w-[190px] inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-extrabold transition-all duration-200 ${
                           isAccepted
                             ? "bg-green-100 text-green-700 cursor-default"
-                            : isUnavailable
+                            : isDisabledStatus
                               ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                               : isAccepting
                                 ? "bg-[#efb000] text-[#172033] cursor-wait"
@@ -945,6 +842,10 @@ function DriverDashboard() {
                           </>
                         ) : isUnavailable ? (
                           "Unavailable"
+                        ) : status === "completed" ? (
+                          "Completed"
+                        ) : status === "cancelled" ? (
+                          "Cancelled"
                         ) : isAccepting ? (
                           <>
                             <RefreshCw size={18} className='animate-spin' />
@@ -966,28 +867,18 @@ function DriverDashboard() {
         )}
       </main>
 
-      {/* =====================================================
-          CUSTOM MODAL
-      ====================================================== */}
-
       {modal.open && (
         <div
           className='fixed inset-0 z-[100] flex items-center justify-center p-4'
           role='dialog'
           aria-modal='true'
         >
-          {/* BACKDROP */}
-
           <div
             className='absolute inset-0 bg-[#172033]/55 backdrop-blur-sm'
             onClick={closeModal}
           />
 
-          {/* MODAL */}
-
-          <div className='relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-white/60 overflow-hidden animate-[fadeIn_0.2s_ease-out]'>
-            {/* TOP ACCENT */}
-
+          <div className='relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-white/60 overflow-hidden'>
             <div
               className={`h-1.5 w-full ${
                 modal.type === "success" ? "bg-green-500" : "bg-red-500"
@@ -995,8 +886,6 @@ function DriverDashboard() {
             />
 
             <div className='p-6 sm:p-7'>
-              {/* CLOSE */}
-
               <button
                 type='button'
                 onClick={closeModal}
@@ -1005,8 +894,6 @@ function DriverDashboard() {
               >
                 <X size={18} />
               </button>
-
-              {/* ICON */}
 
               <div
                 className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-5 ${
@@ -1020,17 +907,11 @@ function DriverDashboard() {
                 )}
               </div>
 
-              {/* TITLE */}
-
               <h3 className='text-2xl font-extrabold text-[#172033] pr-8'>
                 {modal.title}
               </h3>
 
-              {/* MESSAGE */}
-
               <p className='text-gray-500 mt-3 leading-6'>{modal.message}</p>
-
-              {/* ACTIONS */}
 
               <div className='flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-7'>
                 {modal.type === "error" && (

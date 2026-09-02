@@ -16,373 +16,321 @@ const {
   updateRideRequestSchema,
 } = require("../validators/rideRequest.validator.js");
 
-exports.create = async (
-  req,
-  res,
-) => {
+exports.create = async (req, res) => {
   try {
     console.log(
       "[rideRequest] create called by:",
       req.user && req.user.id,
     );
 
-    console.log(
-      "[rideRequest] payload:",
-      req.body,
-    );
+    console.log("[rideRequest] payload:", req.body);
 
-    const {
-      error,
-    } =
-      createRideRequestSchema.validate(
-        req.body,
-        {
-          abortEarly: true,
-        },
-      );
+    const { error } = createRideRequestSchema.validate(
+      req.body,
+      {
+        abortEarly: true,
+      },
+    );
 
     if (error) {
       return res.status(400).json({
         success: false,
-
-        message:
-          error.details[0].message,
+        message: error.details[0].message,
       });
     }
 
-    const result =
-      await createRideRequest(
-        req.user.id,
-        req.body,
-      );
+    const result = await createRideRequest(
+      req.user.id,
+      req.body,
+    );
 
     return res.status(201).json({
       success: true,
-
-      message:
-        "Ride request created successfully.",
-
+      message: "Ride request created successfully.",
       data: result,
     });
   } catch (err) {
-    console.error(
-      "Create ride error:",
-      err,
-    );
+    console.error("Create ride error:", err);
 
     return res.status(500).json({
       success: false,
-
       message:
-        err.message ||
-        "Failed to create ride request.",
+        err.message || "Failed to create ride request.",
     });
   }
 };
 
-exports.getDriverLocation =
-  async (req, res) => {
-    try {
-      const {
-        rideRequestId,
-      } = req.params;
+exports.getDriverLocation = async (req, res) => {
+  try {
+    const { rideRequestId } = req.params;
 
-      const rideRequest =
-        await RideRequest.findById(
-          rideRequestId,
-        ).select(
-          "driverLocation assignedDriver",
-        );
+    const rideRequest = await RideRequest.findById(
+      rideRequestId,
+    ).select("driverLocation assignedDriver");
 
-      if (!rideRequest) {
-        return res.status(404).json({
-          success: false,
-          message:
-            "Ride request not found",
-        });
-      }
-
-      if (
-        !rideRequest.assignedDriver
-      ) {
-        return res.status(404).json({
-          success: false,
-          message:
-            "No driver assigned to this ride",
-        });
-      }
-
-      if (
-        !rideRequest.driverLocation ||
-        rideRequest.driverLocation
-          .latitude === null ||
-        rideRequest.driverLocation
-          .longitude === null
-      ) {
-        return res.status(404).json({
-          success: false,
-          message:
-            "Driver location not available",
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-
-        driverLocation:
-          rideRequest.driverLocation,
-      });
-    } catch (error) {
-      console.error(
-        "Get driver location error:",
-        error,
-      );
-
-      return res.status(500).json({
+    if (!rideRequest) {
+      return res.status(404).json({
         success: false,
-
-        message:
-          "Failed to get driver location",
+        message: "Ride request not found.",
       });
     }
-  };
 
-exports.getMine =
-  async (req, res) => {
-    try {
-      const requests =
-        await getMyRideRequests(
-          req.user.id,
-        );
-
-      return res.status(200).json({
-        success: true,
-
-        count:
-          requests.length,
-
-        data: requests,
-      });
-    } catch (err) {
-      console.error(
-        "Get Ride Requests Error:",
-        err,
-      );
-
-      return res.status(500).json({
+    if (!rideRequest.assignedDriver) {
+      return res.status(404).json({
         success: false,
-
-        message: err.message,
+        message: "No driver assigned to this ride.",
       });
     }
-  };
 
-exports.getById =
-  async (req, res) => {
-    try {
-      const rideRequest =
-        await getRideRequestById(
-          req.params.id,
-        );
+    const location = rideRequest.driverLocation;
 
-      if (!rideRequest) {
-        return res.status(404).json({
-          success: false,
-
-          message:
-            "Ride request not found.",
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-
-        data: rideRequest,
-      });
-    } catch (err) {
-      return res.status(500).json({
+    if (
+      !location ||
+      location.latitude === null ||
+      location.latitude === undefined ||
+      location.longitude === null ||
+      location.longitude === undefined
+    ) {
+      return res.status(404).json({
         success: false,
-
-        message: err.message,
+        message: "Driver location not available.",
       });
     }
-  };
 
-exports.update =
-  async (req, res) => {
-    try {
-      const {
-        error,
-      } =
-        updateRideRequestSchema.validate(
-          req.body,
-          {
-            abortEarly: true,
-          },
-        );
+    return res.status(200).json({
+      success: true,
+      driverLocation: location,
+    });
+  } catch (error) {
+    console.error(
+      "Get driver location error:",
+      error,
+    );
 
-      if (error) {
-        return res.status(400).json({
-          success: false,
+    return res.status(500).json({
+      success: false,
+      message: "Failed to get driver location.",
+    });
+  }
+};
 
-          message:
-            error.details[0].message,
-        });
-      }
+exports.getMine = async (req, res) => {
+  try {
+    const requests = await getMyRideRequests(
+      req.user.id,
+    );
 
-      const rideRequest =
-        await updateRideRequest(
-          req.params.id,
-          req.body,
-          req.user.id,
-        );
+    return res.status(200).json({
+      success: true,
+      count: Array.isArray(requests)
+        ? requests.length
+        : 0,
+      data: Array.isArray(requests) ? requests : [],
+    });
+  } catch (err) {
+    console.error("Get Ride Requests Error:", err);
 
-      return res.status(200).json({
-        success: true,
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
 
-        message:
-          "Ride request updated successfully.",
+exports.getById = async (req, res) => {
+  try {
+    const rideRequest = await getRideRequestById(
+      req.params.id,
+    );
 
-        data: rideRequest,
-      });
-    } catch (err) {
-      console.error(
-        "Update ride error:",
-        err,
-      );
-
-      return res.status(500).json({
+    if (!rideRequest) {
+      return res.status(404).json({
         success: false,
-
-        message: err.message,
+        message: "Ride request not found.",
       });
     }
-  };
 
-exports.cancel =
-  async (req, res) => {
-    try {
-      const rideRequest =
-        await cancelRideRequest(
-          req.params.id,
-          req.user.id,
-        );
+    return res.status(200).json({
+      success: true,
+      data: rideRequest,
+    });
+  } catch (err) {
+    console.error("Get ride request error:", err);
 
-      return res.status(200).json({
-        success: true,
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
 
-        message:
-          "Ride request cancelled successfully.",
+exports.update = async (req, res) => {
+  try {
+    const { error } = updateRideRequestSchema.validate(
+      req.body,
+      {
+        abortEarly: true,
+      },
+    );
 
-        data: rideRequest,
-      });
-    } catch (err) {
-      return res.status(500).json({
+    if (error) {
+      return res.status(400).json({
         success: false,
-
-        message: err.message,
+        message: error.details[0].message,
       });
     }
-  };
 
-exports.remove =
-  async (req, res) => {
-    try {
-      await deleteRideRequest(
-        req.params.id,
-        req.user.id,
-      );
+    const rideRequest = await updateRideRequest(
+      req.params.id,
+      req.body,
+      req.user.id,
+    );
 
-      return res.status(200).json({
-        success: true,
-
-        message:
-          "Ride request deleted successfully.",
-      });
-    } catch (err) {
-      return res.status(500).json({
+    if (!rideRequest) {
+      return res.status(404).json({
         success: false,
-
-        message: err.message,
+        message: "Ride request not found.",
       });
     }
-  };
 
-exports.search =
-  async (req, res) => {
-    try {
-      const {
-        pickupLocation,
-        destination,
-        departureDate,
-      } = req.query;
+    return res.status(200).json({
+      success: true,
+      message: "Ride request updated successfully.",
+      data: rideRequest,
+    });
+  } catch (err) {
+    console.error("Update ride error:", err);
 
-      const requests =
-        await searchRideRequests(
-          pickupLocation,
-          destination,
-          departureDate,
-        );
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
 
-      return res.status(200).json({
-        success: true,
+exports.cancel = async (req, res) => {
+  try {
+    const rideRequest = await cancelRideRequest(
+      req.params.id,
+      req.user.id,
+    );
 
-        count:
-          requests.length,
-
-        data: requests,
-      });
-    } catch (err) {
-      return res.status(500).json({
+    if (!rideRequest) {
+      return res.status(404).json({
         success: false,
-
-        message: err.message,
+        message: "Ride request not found.",
       });
     }
-  };
 
-exports.accept =
-  async (req, res) => {
-    try {
-      const {
-        driverId,
-        tripId,
-      } = req.body;
+    return res.status(200).json({
+      success: true,
+      message: "Ride request cancelled successfully.",
+      data: rideRequest,
+    });
+  } catch (err) {
+    console.error("Cancel ride error:", err);
 
-      const rideRequest =
-        await assignDriver(
-          req.params.id,
-          driverId,
-          tripId,
-        );
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
 
-      if (!rideRequest) {
-        return res.status(404).json({
-          success: false,
+exports.remove = async (req, res) => {
+  try {
+    const rideRequest = await deleteRideRequest(
+      req.params.id,
+      req.user.id,
+    );
 
-          message:
-            "Ride request not found.",
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-
-        message:
-          "Driver assigned successfully.",
-
-        data: rideRequest,
-      });
-    } catch (err) {
-      console.error(
-        "Accept ride error:",
-        err,
-      );
-
-      return res.status(500).json({
+    if (!rideRequest) {
+      return res.status(404).json({
         success: false,
-
-        message: err.message,
+        message: "Ride request not found.",
       });
     }
-  };
+
+    return res.status(200).json({
+      success: true,
+      message: "Ride request deleted successfully.",
+    });
+  } catch (err) {
+    console.error("Delete ride error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+exports.search = async (req, res) => {
+  try {
+    const {
+      pickupLocation,
+      destination,
+      departureDate,
+    } = req.query;
+
+    const requests = await searchRideRequests(
+      pickupLocation,
+      destination,
+      departureDate,
+    );
+
+    return res.status(200).json({
+      success: true,
+      count: Array.isArray(requests)
+        ? requests.length
+        : 0,
+      data: Array.isArray(requests) ? requests : [],
+    });
+  } catch (err) {
+    console.error("Search ride requests error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+exports.accept = async (req, res) => {
+  try {
+    const { driverId, tripId } = req.body;
+
+    if (!driverId) {
+      return res.status(400).json({
+        success: false,
+        message: "driverId is required.",
+      });
+    }
+
+    const rideRequest = await assignDriver(
+      req.params.id,
+      driverId,
+      tripId || null,
+    );
+
+    if (!rideRequest) {
+      return res.status(404).json({
+        success: false,
+        message: "Ride request not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Driver assigned successfully.",
+      data: rideRequest,
+    });
+  } catch (err) {
+    console.error("Accept ride error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};

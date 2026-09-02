@@ -1,13 +1,13 @@
 import API from "./api";
 
 export const getAvailableGroups = async () => {
-  return await API.get("/driver-groups/available");
+  return await API.get("/ride-groups/available");
 };
 
 export const getCurrentGroup = async () => {
-  return await API.get("/driver-groups/current");
+  return await API.get("/ride-groups/mine");
 };
 
 export const acceptGroup = async (groupId) => {
-  return await API.post(`/driver-groups/${groupId}/accept`);
+  return await API.patch(`/ride-groups/${groupId}/accept`);
 };

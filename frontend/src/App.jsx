@@ -18,6 +18,7 @@ import EditProfile from "./pages/rider/EditProfile";
 import RideHistory from "./pages/rider/RideHistory";
 import SavedPlaces from "./pages/rider/SavedPlaces";
 import Payments from "./pages/rider/Payments";
+import DriverDetails from "./pages/rider/DriverDetails";
 import Help from "./pages/rider/Help";
 import CreateRideRequest from "./pages/rider/CreateRideRequest";
 import MyRideRequests from "./pages/rider/MyRideRequests";
@@ -144,6 +145,7 @@ function App() {
             )
           }
         />
+        <Route path='/driver-details/:requestId' element={<DriverDetails />} />
 
         <Route
           path='/driver/accepted-groups'
