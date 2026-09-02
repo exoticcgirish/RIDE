@@ -44,29 +44,41 @@ function RideRequestCard({
       transition={{ duration: 0.25 }}
       className="rounded-3xl bg-white/90 backdrop-blur-xl shadow-xl border border-gray-100 p-6"
     >
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex justify-between items-start gap-4">
-        <div className="min-w-0">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2 break-words">
+        <div className="min-w-0 flex-1">
+          {/* PICKUP */}
+          <div className="flex items-center gap-2 min-w-0">
             <MapPin
               className="text-indigo-600 flex-shrink-0"
               size={22}
             />
 
-            {request.pickupLocation || "Pickup location"}
-          </h2>
+            <h2
+              className="text-xl font-bold text-gray-800 truncate min-w-0"
+              title={request.pickupLocation || "Pickup location"}
+            >
+              {request.pickupLocation || "Pickup location"}
+            </h2>
+          </div>
 
+          {/* ARROW */}
           <div className="text-center text-gray-400 my-1 text-lg">
             ↓
           </div>
 
-          <h2 className="text-xl font-bold text-gray-800 break-words">
+          {/* DESTINATION */}
+          <h2
+            className="text-xl font-bold text-gray-800 truncate min-w-0"
+            title={request.destination || "Destination"}
+          >
             {request.destination || "Destination"}
           </h2>
         </div>
 
+        {/* STATUS */}
         <span
-          className={`px-4 py-1 rounded-full text-sm font-semibold whitespace-nowrap ${
+          className={`px-4 py-1 rounded-full text-sm font-semibold whitespace-nowrap flex-shrink-0 ${
             statusColors[request.status] ||
             "bg-gray-100 text-gray-700"
           }`}
@@ -75,19 +87,19 @@ function RideRequestCard({
         </span>
       </div>
 
-      {/* Divider */}
+      {/* DIVIDER */}
       <div className="border-t my-5"></div>
 
-      {/* Ride Details */}
+      {/* RIDE DETAILS */}
       <div className="grid md:grid-cols-2 gap-4 text-gray-700">
-        {/* Date */}
-        <div className="flex items-center gap-3">
+        {/* DATE */}
+        <div className="flex items-center gap-3 min-w-0">
           <Calendar
             className="text-indigo-600 flex-shrink-0"
             size={18}
           />
 
-          <span>
+          <span className="truncate">
             {request.departureDate
               ? new Date(
                   request.departureDate
@@ -96,47 +108,47 @@ function RideRequestCard({
           </span>
         </div>
 
-        {/* Time */}
-        <div className="flex items-center gap-3">
+        {/* TIME */}
+        <div className="flex items-center gap-3 min-w-0">
           <Clock
             className="text-indigo-600 flex-shrink-0"
             size={18}
           />
 
-          <span>
+          <span className="truncate">
             {request.departureTime || "Not specified"}
           </span>
         </div>
 
-        {/* Seats */}
-        <div className="flex items-center gap-3">
+        {/* SEATS */}
+        <div className="flex items-center gap-3 min-w-0">
           <Users
             className="text-indigo-600 flex-shrink-0"
             size={18}
           />
 
-          <span>
+          <span className="truncate">
             {request.seatsRequired || 1} Seat(s)
           </span>
         </div>
 
-        {/* Notes */}
-        <div className="flex items-start gap-3 md:col-span-2">
+        {/* NOTES */}
+        <div className="flex items-start gap-3 md:col-span-2 min-w-0">
           <FileText
             className="text-indigo-600 mt-1 flex-shrink-0"
             size={18}
           />
 
-          <p className="text-gray-600 break-words">
+          <p
+            className="text-gray-600 truncate min-w-0"
+            title={request.notes || "No additional notes."}
+          >
             {request.notes || "No additional notes."}
           </p>
         </div>
       </div>
 
-      {/* ================================================= */}
       {/* DRIVER DETAILS */}
-      {/* ================================================= */}
-
       {request.status === "accepted" &&
         request.assignedDriver && (
           <div className="mt-6 bg-green-50 border border-green-200 rounded-2xl p-5">
@@ -152,19 +164,26 @@ function RideRequestCard({
             </div>
 
             <div className="space-y-3 text-gray-700">
-              {/* Driver */}
-              <div className="flex items-center gap-3">
+              {/* DRIVER */}
+              <div className="flex items-center gap-3 min-w-0">
                 <User
                   className="text-green-600 flex-shrink-0"
                   size={19}
                 />
 
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs text-gray-500">
                     Driver
                   </p>
 
-                  <p className="font-semibold text-gray-800">
+                  <p
+                    className="font-semibold text-gray-800 truncate"
+                    title={
+                      request.assignedDriver.full_name ||
+                      request.assignedDriver.name ||
+                      "Driver"
+                    }
+                  >
                     {request.assignedDriver.full_name ||
                       request.assignedDriver.name ||
                       "Driver"}
@@ -172,14 +191,14 @@ function RideRequestCard({
                 </div>
               </div>
 
-              {/* Phone */}
-              <div className="flex items-center gap-3">
+              {/* PHONE */}
+              <div className="flex items-center gap-3 min-w-0">
                 <Phone
                   className="text-green-600 flex-shrink-0"
                   size={19}
                 />
 
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs text-gray-500">
                     Phone
                   </p>
@@ -187,7 +206,7 @@ function RideRequestCard({
                   {request.assignedDriver.phone ? (
                     <a
                       href={`tel:${request.assignedDriver.phone}`}
-                      className="font-semibold text-gray-800 hover:text-green-600"
+                      className="font-semibold text-gray-800 hover:text-green-600 truncate block"
                     >
                       {request.assignedDriver.phone}
                     </a>
@@ -199,76 +218,100 @@ function RideRequestCard({
                 </div>
               </div>
 
-              {/* Vehicle Model */}
-              <div className="flex items-center gap-3">
+              {/* VEHICLE MODEL */}
+              <div className="flex items-center gap-3 min-w-0">
                 <Car
                   className="text-green-600 flex-shrink-0"
                   size={19}
                 />
 
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs text-gray-500">
                     Vehicle
                   </p>
 
-                  <p className="font-semibold text-gray-800">
+                  <p
+                    className="font-semibold text-gray-800 truncate"
+                    title={
+                      request.assignedDriver.vehicleModel ||
+                      "Vehicle"
+                    }
+                  >
                     {request.assignedDriver.vehicleModel ||
                       "Vehicle"}
                   </p>
                 </div>
               </div>
 
-              {/* Vehicle Number */}
-              <div className="flex items-center gap-3">
+              {/* VEHICLE NUMBER */}
+              <div className="flex items-center gap-3 min-w-0">
                 <Car
                   className="text-green-600 flex-shrink-0"
                   size={19}
                 />
 
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs text-gray-500">
                     Vehicle Number
                   </p>
 
-                  <p className="font-bold text-gray-900">
+                  <p
+                    className="font-bold text-gray-900 truncate"
+                    title={
+                      request.assignedDriver.vehicleNumber ||
+                      "Not available"
+                    }
+                  >
                     {request.assignedDriver.vehicleNumber ||
                       "Not available"}
                   </p>
                 </div>
               </div>
 
-              {/* Vehicle Type */}
-              <div className="flex items-center gap-3">
+              {/* VEHICLE TYPE */}
+              <div className="flex items-center gap-3 min-w-0">
                 <Car
                   className="text-green-600 flex-shrink-0"
                   size={19}
                 />
 
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs text-gray-500">
                     Vehicle Type
                   </p>
 
-                  <p className="font-semibold text-gray-800">
+                  <p
+                    className="font-semibold text-gray-800 truncate"
+                    title={
+                      request.assignedDriver.vehicleType ||
+                      "Not available"
+                    }
+                  >
                     {request.assignedDriver.vehicleType ||
                       "Not available"}
                   </p>
                 </div>
               </div>
 
-              {/* Vehicle Color */}
-              <div className="flex items-center gap-3">
+              {/* VEHICLE COLOR */}
+              <div className="flex items-center gap-3 min-w-0">
                 <Car
                   className="text-green-600 flex-shrink-0"
                   size={19}
                 />
 
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs text-gray-500">
                     Color
                   </p>
 
-                  <p className="font-semibold text-gray-800">
+                  <p
+                    className="font-semibold text-gray-800 truncate"
+                    title={
+                      request.assignedDriver.vehicleColor ||
+                      "Not available"
+                    }
+                  >
                     {request.assignedDriver.vehicleColor ||
                       "Not available"}
                   </p>
@@ -278,10 +321,7 @@ function RideRequestCard({
           </div>
         )}
 
-      {/* ================================================= */}
       {/* GROUPED MESSAGE */}
-      {/* ================================================= */}
-
       {request.status === "grouped" && (
         <div className="mt-6 rounded-2xl bg-indigo-50 border border-indigo-200 p-4">
           <p className="font-semibold text-indigo-800">
@@ -294,10 +334,7 @@ function RideRequestCard({
         </div>
       )}
 
-      {/* ================================================= */}
       {/* WAITING MESSAGE */}
-      {/* ================================================= */}
-
       {request.status === "waiting" && (
         <div className="mt-6 rounded-2xl bg-yellow-50 border border-yellow-200 p-4">
           <p className="font-semibold text-yellow-800">
@@ -310,13 +347,10 @@ function RideRequestCard({
         </div>
       )}
 
-      {/* ================================================= */}
       {/* BUTTONS */}
-      {/* ================================================= */}
-
       {request.status === "waiting" && (
         <div className="flex flex-wrap gap-3 mt-6">
-          {/* Edit */}
+          {/* EDIT */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -327,7 +361,7 @@ function RideRequestCard({
             Edit
           </motion.button>
 
-          {/* Cancel */}
+          {/* CANCEL */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -338,7 +372,7 @@ function RideRequestCard({
             Cancel
           </motion.button>
 
-          {/* Delete */}
+          {/* DELETE */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

@@ -11,24 +11,10 @@ app.use(helmet());
 app.use(compression());
 
 const corsOptions = {
-  origin: [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-  ],
+  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
   credentials: true,
-  methods: [
-    "GET",
-    "POST",
-    "PUT",
-    "DELETE",
-    "PATCH",
-    "OPTIONS",
-  ],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   optionsSuccessStatus: 204,
 };
 app.use(cors(corsOptions));
@@ -36,36 +22,15 @@ app.use(express.json());
 app.use(
   express.urlencoded({
     extended: true,
-  })
+  }),
 );
-app.use(
-  "/api/auth",
-  require("./routes/authRoutes")
-);
-app.use(
-  "/api/users",
-  require("./routes/user.routes")
-);
-app.use(
-  "/api/protected",
-  require("./routes/protectedRoutes")
-);
-app.use(
-  "/api/ride-requests",
-  require("./routes/rideRequest.routes")
-);
-app.use(
-  "/api/admin",
-  require("./routes/admin.routes")
-);
-app.use(
-  "/api/drivers",
-  require("./routes/driver.routes")
-);
-app.use(
-  "/api/ride-groups",
-  require("./routes/rideGroup.routes.js")
-);
+app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/users", require("./routes/user.routes"));
+app.use("/api/protected", require("./routes/protectedRoutes"));
+app.use("/api/ride-requests", require("./routes/rideRequest.routes"));
+app.use("/api/admin", require("./routes/admin.routes"));
+app.use("/api/drivers", require("./routes/driver.routes"));
+app.use("/api/ride-groups", require("./routes/rideGroup.routes.js"));
 app.get("/test-rabbit", async (req, res) => {
   try {
     await sendMessage("ride_created", {
@@ -81,10 +46,7 @@ app.get("/test-rabbit", async (req, res) => {
       message: "Message sent to RabbitMQ",
     });
   } catch (error) {
-    console.error(
-      "[RabbitMQ Test Error]",
-      error
-    );
+    console.error("[RabbitMQ Test Error]", error);
 
     res.status(500).json({
       success: false,
@@ -113,8 +75,7 @@ app.use((err, req, res, next) => {
 
   res.status(statusCode).json({
     success: false,
-    message:
-      err.message || "Internal Server Error",
+    message: err.message || "Internal Server Error",
 
     ...(process.env.NODE_ENV === "development" && {
       stack: err.stack,

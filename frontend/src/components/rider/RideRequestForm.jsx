@@ -8,6 +8,7 @@ import {
   Clock,
   Users,
   FileText,
+  ChevronDown,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createRideRequest } from "../../services/rideApi";
@@ -18,18 +19,24 @@ function RideRequestForm() {
 
   const [formData, setFormData] = useState({
     pickupLocation: "",
+    pickupELoc: null,
+
     destination: "",
-    pickupCoordinates: null,
-    destinationCoordinates: null,
+    destinationELoc: null,
+
     departureDate: "",
     departureTime: "",
+
     seatsRequired: 1,
+
     notes: "",
   });
 
   const [loading, setLoading] = useState(false);
-  const [locationType, setLocationType] = useState("pickup");
 
+  /*
+   * Handle normal input changes.
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -39,48 +46,93 @@ function RideRequestForm() {
         [name]: name === "seatsRequired" ? Number(value) : value,
       };
 
+      /*
+       * If pickup text is manually changed,
+       * previously selected Mappls location is invalid.
+       */
       if (name === "pickupLocation") {
-        updated.pickupCoordinates = null;
+        updated.pickupELoc = null;
       }
 
+      /*
+       * If destination text is manually changed,
+       * previously selected Mappls location is invalid.
+       */
       if (name === "destination") {
-        updated.destinationCoordinates = null;
+        updated.destinationELoc = null;
       }
 
       return updated;
     });
   };
 
-  const handleLocationSelect = (coordinates) => {
+  /*
+   * Mappls selection callback.
+   */
+  const handleLocationSelect = (selectedPlace, locationType) => {
+    if (!selectedPlace) {
+      return;
+    }
+
+    const { location, eLoc } = selectedPlace;
+
+    if (!location || !eLoc) {
+      toast.error("Invalid Mappls location. Please select another suggestion.");
+
+      return;
+    }
+
     if (locationType === "pickup") {
       setFormData((prev) => ({
         ...prev,
-        pickupCoordinates: coordinates,
+        pickupLocation: location,
+        pickupELoc: eLoc,
       }));
 
-      console.log("Pickup coordinates:", coordinates);
+      console.log("Selected pickup:", {
+        location,
+        eLoc,
+      });
+
+      return;
     }
 
     if (locationType === "destination") {
       setFormData((prev) => ({
         ...prev,
-        destinationCoordinates: coordinates,
+        destination: location,
+        destinationELoc: eLoc,
       }));
 
-      console.log("Destination coordinates:", coordinates);
+      console.log("Selected destination:", {
+        location,
+        eLoc,
+      });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.pickupCoordinates) {
-      toast.error("Please select your pickup location on the map.");
+    /*
+     * Pickup must be selected from Mappls.
+     */
+    if (!formData.pickupELoc) {
+      toast.error(
+        "Please select your pickup location from the Mappls suggestions.",
+      );
+
       return;
     }
 
-    if (!formData.destinationCoordinates) {
-      toast.error("Please select your destination on the map.");
+    /*
+     * Destination must be selected from Mappls.
+     */
+    if (!formData.destinationELoc) {
+      toast.error(
+        "Please select your destination from the Mappls suggestions.",
+      );
+
       return;
     }
 
@@ -97,27 +149,54 @@ function RideRequestForm() {
     try {
       setLoading(true);
 
-      const res = await createRideRequest(formData);
+      /*
+       * Do not send fake coordinates.
+       * Backend resolves coordinates.
+       */
+      const payload = {
+        pickupLocation: formData.pickupLocation,
+        pickupELoc: formData.pickupELoc,
 
-      toast.success(res.data?.message || "Ride request created successfully.");
+        destination: formData.destination,
+        destinationELoc: formData.destinationELoc,
+
+        departureDate: formData.departureDate,
+        departureTime: formData.departureTime,
+
+        seatsRequired: formData.seatsRequired,
+
+        notes: formData.notes,
+      };
+
+      console.log("Creating ride request:", payload);
+
+      const response = await createRideRequest(payload);
+
+      toast.success(
+        response.data?.message || "Ride request created successfully.",
+      );
 
       setFormData({
         pickupLocation: "",
+        pickupELoc: null,
+
         destination: "",
-        pickupCoordinates: null,
-        destinationCoordinates: null,
+        destinationELoc: null,
+
         departureDate: "",
         departureTime: "",
+
         seatsRequired: 1,
+
         notes: "",
       });
 
       navigate("/my-ride-requests");
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Create ride error:", error);
 
       toast.error(
-        err.response?.data?.message || "Failed to create ride request.",
+        error.response?.data?.message || "Failed to create ride request.",
       );
     } finally {
       setLoading(false);
@@ -127,6 +206,8 @@ function RideRequestForm() {
   return (
     <div className='min-h-screen bg-gray-50'>
       <div className='max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10'>
+        {/* HEADER */}
+
         <div className='flex items-start gap-4 mb-8'>
           <button
             type='button'
@@ -151,69 +232,99 @@ function RideRequestForm() {
           </div>
         </div>
 
+        {/* FORM CARD */}
+
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          initial={{
+            opacity: 0,
+            y: 20,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            duration: 0.4,
+          }}
           className='bg-white rounded-3xl shadow-lg border border-gray-100 p-5 sm:p-8'
         >
           <form onSubmit={handleSubmit} className='space-y-7'>
-            {/* LOCATION INPUTS */}
+            {/* LOCATIONS */}
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-              <div>
+              {/* PICKUP */}
+
+              <div className='min-w-0'>
                 <label className='flex items-center gap-2 mb-2 font-semibold text-gray-800'>
-                  <MapPin size={18} className='text-green-600' />
+                  <MapPin size={18} className='text-green-600 flex-shrink-0' />
                   Pickup Location
                 </label>
 
                 <input
+                  id='pickup-location-input'
                   type='text'
                   name='pickupLocation'
                   value={formData.pickupLocation}
-                  onFocus={() => setLocationType("pickup")}
                   onChange={handleChange}
-                  placeholder='Enter pickup location'
+                  placeholder='Search pickup location'
                   required
-                  className={`w-full rounded-xl border px-4 py-3.5 text-gray-800 outline-none transition ${
-                    locationType === "pickup"
-                      ? "border-green-500 bg-white ring-2 ring-green-100"
+                  autoComplete='off'
+                  title={formData.pickupLocation}
+                  className={`w-full min-w-0 rounded-xl border px-4 py-3.5 text-gray-800 outline-none transition ${
+                    formData.pickupELoc
+                      ? "border-green-500 bg-green-50"
                       : "border-gray-300 bg-gray-50"
                   }`}
                 />
 
-                {formData.pickupCoordinates && (
+                {formData.pickupELoc ? (
                   <p className='text-green-600 text-sm mt-2'>
-                    ✓ Pickup coordinates selected
+                    ✓ Pickup selected
                   </p>
+                ) : (
+                  formData.pickupLocation && (
+                    <p className='text-orange-600 text-xs mt-2'>
+                      Select a Mappls suggestion.
+                    </p>
+                  )
                 )}
               </div>
 
-              <div>
+              {/* DESTINATION */}
+
+              <div className='min-w-0'>
                 <label className='flex items-center gap-2 mb-2 font-semibold text-gray-800'>
-                  <MapPin size={18} className='text-red-500' />
+                  <MapPin size={18} className='text-red-500 flex-shrink-0' />
                   Destination
                 </label>
 
                 <input
+                  id='destination-location-input'
                   type='text'
                   name='destination'
                   value={formData.destination}
-                  onFocus={() => setLocationType("destination")}
                   onChange={handleChange}
-                  placeholder='Enter destination'
+                  placeholder='Search destination'
                   required
-                  className={`w-full rounded-xl border px-4 py-3.5 text-gray-800 outline-none transition ${
-                    locationType === "destination"
-                      ? "border-red-500 bg-white ring-2 ring-red-100"
+                  autoComplete='off'
+                  title={formData.destination}
+                  className={`w-full min-w-0 rounded-xl border px-4 py-3.5 text-gray-800 outline-none transition ${
+                    formData.destinationELoc
+                      ? "border-red-500 bg-red-50"
                       : "border-gray-300 bg-gray-50"
                   }`}
                 />
 
-                {formData.destinationCoordinates && (
+                {formData.destinationELoc ? (
                   <p className='text-green-600 text-sm mt-2'>
-                    ✓ Destination coordinates selected
+                    ✓ Destination selected
                   </p>
+                ) : (
+                  formData.destination && (
+                    <p className='text-orange-600 text-xs mt-2'>
+                      Select a Mappls suggestion.
+                    </p>
+                  )
                 )}
               </div>
             </div>
@@ -222,30 +333,28 @@ function RideRequestForm() {
 
             <div>
               <h3 className='flex items-center gap-2 mb-3 font-semibold text-gray-800'>
-                <MapPin
-                  size={19}
-                  className={
-                    locationType === "pickup"
-                      ? "text-green-600"
-                      : "text-red-500"
-                  }
-                />
-                Select {locationType === "pickup" ? "Pickup" : "Destination"}{" "}
-                Location on Map
+                <MapPin size={19} className='text-yellow-500' />
+                Selected Locations
               </h3>
 
               <RideMap
-                locationType={locationType}
+                pickupInputId='pickup-location-input'
+                destinationInputId='destination-location-input'
                 onLocationSelect={handleLocationSelect}
               />
             </div>
 
-            {/* DATE AND TIME */}
+            {/* DATE / TIME */}
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              {/* DATE */}
+
               <div>
                 <label className='flex items-center gap-2 mb-2 font-semibold text-gray-800'>
-                  <Calendar size={18} className='text-yellow-500' />
+                  <Calendar
+                    size={18}
+                    className='text-yellow-500 flex-shrink-0'
+                  />
                   Departure Date
                 </label>
 
@@ -259,9 +368,11 @@ function RideRequestForm() {
                 />
               </div>
 
+              {/* TIME */}
+
               <div>
                 <label className='flex items-center gap-2 mb-2 font-semibold text-gray-800'>
-                  <Clock size={18} className='text-yellow-500' />
+                  <Clock size={18} className='text-yellow-500 flex-shrink-0' />
                   Departure Time
                 </label>
 
@@ -276,31 +387,48 @@ function RideRequestForm() {
               </div>
             </div>
 
-            {/* SEATS AND NOTES */}
+            {/* SEATS / NOTES */}
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              {/* SEATS */}
+
               <div>
                 <label className='flex items-center gap-2 mb-2 font-semibold text-gray-800'>
-                  <Users size={18} className='text-yellow-500' />
+                  <Users size={18} className='text-yellow-500 flex-shrink-0' />
                   Seats Required
                 </label>
 
-                <select
-                  name='seatsRequired'
-                  value={formData.seatsRequired}
-                  onChange={handleChange}
-                  className='w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 outline-none transition focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100'
-                >
-                  <option value={1}>1 Seat</option>
-                  <option value={2}>2 Seats</option>
-                  <option value={3}>3 Seats</option>
-                  <option value={4}>4 Seats</option>
-                </select>
+                {/* CUSTOM SELECT WRAPPER */}
+
+                <div className='relative'>
+                  <select
+                    name='seatsRequired'
+                    value={formData.seatsRequired}
+                    onChange={handleChange}
+                    className='appearance-none w-full h-[58px] rounded-xl border border-gray-300 bg-gray-50 px-4 pr-12 text-gray-800 font-medium outline-none cursor-pointer transition focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100'
+                  >
+                    <option value={1}>1 Seat</option>
+                    <option value={2}>2 Seats</option>
+                    <option value={3}>3 Seats</option>
+                    <option value={4}>4 Seats</option>
+                  </select>
+
+                  {/* CUSTOM ARROW */}
+
+                  <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4'>
+                    <ChevronDown size={20} className='text-gray-600' />
+                  </div>
+                </div>
               </div>
+
+              {/* NOTES */}
 
               <div>
                 <label className='flex items-center gap-2 mb-2 font-semibold text-gray-800'>
-                  <FileText size={18} className='text-yellow-500' />
+                  <FileText
+                    size={18}
+                    className='text-yellow-500 flex-shrink-0'
+                  />
                   Additional Notes
                 </label>
 
@@ -318,8 +446,12 @@ function RideRequestForm() {
             {/* SUBMIT */}
 
             <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{
+                scale: 1.01,
+              }}
+              whileTap={{
+                scale: 0.98,
+              }}
               type='submit'
               disabled={loading}
               className='w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-base sm:text-lg py-4 rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed'
@@ -355,16 +487,28 @@ function RideRequestForm() {
           </form>
         </motion.div>
 
+        {/* TIPS */}
+
         <div className='mt-8 bg-yellow-50 border border-yellow-200 rounded-2xl p-5 sm:p-6'>
           <h3 className='text-lg font-bold text-gray-900 mb-4'>Ride Tips</h3>
 
           <ul className='space-y-2.5 text-sm sm:text-base text-gray-700'>
-            <li>Double-check your pickup location.</li>
-            <li>Be ready 5–10 minutes before departure.</li>
-            <li> Keep your phone available for driver communication.</li>
-            <li> Mention any luggage or special requirements in Notes.</li>
+            <li>Select the exact pickup location from Mappls.</li>
+
+            <li>Select the exact destination from Mappls.</li>
+
+            <li>Your coordinates are resolved automatically by the server.</li>
+
+            <li>Riders within 100 meters can be grouped together.</li>
+
+            <li>Mention luggage or special requirements in Notes.</li>
           </ul>
         </div>
+
+        <p className='text-xs text-gray-400 mt-4 text-center'>
+          Location fallback geocoding uses OpenStreetMap data when the selected
+          Mappls result does not provide coordinates.
+        </p>
       </div>
     </div>
   );

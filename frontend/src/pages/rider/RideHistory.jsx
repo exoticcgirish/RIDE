@@ -26,6 +26,7 @@ function RideHistory() {
   const fetchRideHistory = async () => {
     try {
       setLoading(true);
+
       const res = await getMyRideRequests();
 
       setRides(
@@ -37,7 +38,10 @@ function RideHistory() {
       );
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || "Failed to load ride history.");
+
+      setError(
+        err.response?.data?.message || "Failed to load ride history.",
+      );
     } finally {
       setLoading(false);
     }
@@ -47,12 +51,16 @@ function RideHistory() {
     switch (status?.toLowerCase()) {
       case "waiting":
         return "bg-yellow-100 text-yellow-700";
+
       case "accepted":
         return "bg-blue-100 text-blue-700";
+
       case "completed":
         return "bg-green-100 text-green-700";
+
       case "cancelled":
         return "bg-red-100 text-red-700";
+
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -74,7 +82,7 @@ function RideHistory() {
   return (
     <div className='min-h-screen bg-gray-100'>
       <div className='max-w-7xl mx-auto px-6 py-8'>
-        {/* Header */}
+        {/* HEADER */}
         <div className='flex items-center justify-between mb-10'>
           <div className='flex items-center gap-5'>
             <button
@@ -88,7 +96,11 @@ function RideHistory() {
               <p className='text-yellow-500 font-semibold uppercase tracking-wider'>
                 Ride History
               </p>
-              <h1 className='text-4xl font-bold text-gray-900'>Your Trips</h1>
+
+              <h1 className='text-4xl font-bold text-gray-900'>
+                Your Trips
+              </h1>
+
               <p className='text-gray-500 mt-2'>
                 View all your ride requests and their status.
               </p>
@@ -103,24 +115,32 @@ function RideHistory() {
           </div>
         </div>
 
-        {/* Loading */}
+        {/* LOADING */}
         {loading && (
           <div className='bg-white rounded-3xl shadow-lg p-16 text-center'>
             <div className='flex justify-center'>
               <div className='w-14 h-14 rounded-full border-4 border-yellow-400 border-t-transparent animate-spin'></div>
             </div>
-            <h2 className='text-2xl font-bold mt-8'>Loading Ride History...</h2>
+
+            <h2 className='text-2xl font-bold mt-8'>
+              Loading Ride History...
+            </h2>
+
             <p className='text-gray-500 mt-3'>
               Please wait while we fetch your rides.
             </p>
           </div>
         )}
 
-        {/* Error */}
+        {/* ERROR */}
         {!loading && error && (
           <div className='bg-red-100 border border-red-200 rounded-3xl p-8'>
-            <h2 className='text-2xl font-bold text-red-700'>Failed to Load</h2>
+            <h2 className='text-2xl font-bold text-red-700'>
+              Failed to Load
+            </h2>
+
             <p className='mt-3 text-red-600'>{error}</p>
+
             <button
               onClick={fetchRideHistory}
               className='mt-6 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl'
@@ -130,7 +150,7 @@ function RideHistory() {
           </div>
         )}
 
-        {/* Empty State */}
+        {/* EMPTY STATE */}
         {!loading && !error && rides.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -138,10 +158,15 @@ function RideHistory() {
             className='bg-white rounded-3xl shadow-lg p-16 text-center'
           >
             <div className='text-7xl'>🚗</div>
-            <h2 className='text-3xl font-bold mt-6'>No Ride History Found</h2>
+
+            <h2 className='text-3xl font-bold mt-6'>
+              No Ride History Found
+            </h2>
+
             <p className='text-gray-500 mt-3'>
               You haven't created any ride requests yet.
             </p>
+
             <button
               onClick={() => navigate("/dashboard")}
               className='mt-8 bg-yellow-400 hover:bg-yellow-500 px-8 py-3 rounded-xl font-semibold transition'
@@ -151,26 +176,34 @@ function RideHistory() {
           </motion.div>
         )}
 
-        {/* Ride Cards */}
+        {/* RIDE CARDS */}
         {!loading && !error && rides.length > 0 && (
           <div className='grid md:grid-cols-2 xl:grid-cols-3 gap-6'>
             {rides.map((ride) => {
               const rideId = ride._id || ride.id;
+
+              const pickupLocation = ride.pickupLocation || "N/A";
+
+              const destination =
+                ride.destination || ride.dropoffLocation || "N/A";
 
               return (
                 <motion.div
                   key={rideId}
                   whileHover={{ y: -8, scale: 1.02 }}
                   transition={{ duration: 0.25 }}
-                  onClick={() => handleCardClick(rideId)}
-                  className='cursor-pointer bg-white rounded-3xl shadow-lg hover:shadow-2xl p-6 flex flex-col justify-between'
+                  onClick={() => handleCardClick(null, rideId)}
+                  className='cursor-pointer bg-white rounded-3xl shadow-lg hover:shadow-2xl p-6 flex flex-col justify-between min-w-0 overflow-hidden'
                 >
-                  <div>
-                    {/* Header */}
-                    <div className='flex justify-between items-center'>
-                      <h2 className='font-bold text-xl'>Ride Request</h2>
+                  <div className='min-w-0'>
+                    {/* HEADER */}
+                    <div className='flex justify-between items-center gap-3 min-w-0'>
+                      <h2 className='font-bold text-xl truncate min-w-0'>
+                        Ride Request
+                      </h2>
+
                       <span
-                        className={`px-4 py-1 rounded-full text-sm font-semibold capitalize ${getStatusClass(
+                        className={`px-4 py-1 rounded-full text-sm font-semibold capitalize shrink-0 ${getStatusClass(
                           ride.status,
                         )}`}
                       >
@@ -178,86 +211,147 @@ function RideHistory() {
                       </span>
                     </div>
 
-                    {/* Route */}
+                    {/* ROUTE */}
                     <div className='mt-8 space-y-5'>
-                      <div className='flex gap-4'>
+                      {/* PICKUP */}
+                      <div className='flex gap-4 min-w-0'>
                         <div className='w-12 h-12 rounded-full bg-green-100 flex items-center justify-center shrink-0'>
-                          <MapPin className='text-green-600' size={20} />
+                          <MapPin
+                            className='text-green-600'
+                            size={20}
+                          />
                         </div>
-                        <div>
-                          <p className='text-gray-500 text-sm'>Pickup</p>
-                          <h3 className='font-semibold text-lg'>
-                            {ride.pickupLocation}
+
+                        <div className='min-w-0 flex-1'>
+                          <p className='text-gray-500 text-sm'>
+                            Pickup
+                          </p>
+
+                          <h3
+                            title={pickupLocation}
+                            className='font-semibold text-lg leading-7 line-clamp-2 break-words overflow-hidden'
+                          >
+                            {pickupLocation}
                           </h3>
                         </div>
                       </div>
 
+                      {/* ROUTE LINE */}
                       <div className='ml-6 h-10 border-l-2 border-dashed border-gray-300'></div>
 
-                      <div className='flex gap-4'>
+                      {/* DESTINATION */}
+                      <div className='flex gap-4 min-w-0'>
                         <div className='w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0'>
-                          <MapPin className='text-red-600' size={20} />
+                          <MapPin
+                            className='text-red-600'
+                            size={20}
+                          />
                         </div>
-                        <div>
-                          <p className='text-gray-500 text-sm'>Destination</p>
-                          <h3 className='font-semibold text-lg'>
-                            {ride.destination || ride.dropoffLocation}
+
+                        <div className='min-w-0 flex-1'>
+                          <p className='text-gray-500 text-sm'>
+                            Destination
+                          </p>
+
+                          <h3
+                            title={destination}
+                            className='font-semibold text-lg leading-7 line-clamp-2 break-words overflow-hidden'
+                          >
+                            {destination}
                           </h3>
                         </div>
                       </div>
                     </div>
 
-                    {/* Info */}
+                    {/* INFO */}
                     <div className='grid grid-cols-2 gap-4 mt-8'>
+                      {/* DATE */}
                       <div className='bg-gray-50 rounded-2xl p-4'>
                         <div className='flex items-center gap-2'>
-                          <Calendar size={18} className='text-yellow-500' />
-                          <span className='text-gray-500 text-sm'>Date</span>
+                          <Calendar
+                            size={18}
+                            className='text-yellow-500'
+                          />
+
+                          <span className='text-gray-500 text-sm'>
+                            Date
+                          </span>
                         </div>
+
                         <p className='font-semibold mt-2 text-sm'>
                           {ride.departureDate
-                            ? new Date(ride.departureDate).toLocaleDateString()
+                            ? new Date(
+                                ride.departureDate,
+                              ).toLocaleDateString()
                             : "N/A"}
                         </p>
                       </div>
 
+                      {/* TIME */}
                       <div className='bg-gray-50 rounded-2xl p-4'>
                         <div className='flex items-center gap-2'>
-                          <Clock size={18} className='text-yellow-500' />
-                          <span className='text-gray-500 text-sm'>Time</span>
+                          <Clock
+                            size={18}
+                            className='text-yellow-500'
+                          />
+
+                          <span className='text-gray-500 text-sm'>
+                            Time
+                          </span>
                         </div>
+
                         <p className='font-semibold mt-2 text-sm'>
                           {ride.departureTime || "N/A"}
                         </p>
                       </div>
 
+                      {/* SEATS */}
                       <div className='bg-gray-50 rounded-2xl p-4'>
                         <div className='flex items-center gap-2'>
-                          <Users size={18} className='text-yellow-500' />
-                          <span className='text-gray-500 text-sm'>Seats</span>
+                          <Users
+                            size={18}
+                            className='text-yellow-500'
+                          />
+
+                          <span className='text-gray-500 text-sm'>
+                            Seats
+                          </span>
                         </div>
+
                         <p className='font-semibold mt-2 text-sm'>
                           {ride.seatsRequired || ride.seats || 1}
                         </p>
                       </div>
 
-                      <div className='bg-gray-50 rounded-2xl p-4'>
+                      {/* NOTES */}
+                      <div className='bg-gray-50 rounded-2xl p-4 min-w-0'>
                         <div className='flex items-center gap-2'>
-                          <FileText size={18} className='text-yellow-500' />
-                          <span className='text-gray-500 text-sm'>Notes</span>
+                          <FileText
+                            size={18}
+                            className='text-yellow-500'
+                          />
+
+                          <span className='text-gray-500 text-sm'>
+                            Notes
+                          </span>
                         </div>
-                        <p className='font-semibold mt-2 text-sm truncate'>
+
+                        <p
+                          title={ride.notes || "N/A"}
+                          className='font-semibold mt-2 text-sm truncate'
+                        >
                           {ride.notes || "N/A"}
                         </p>
                       </div>
                     </div>
                   </div>
 
+                  {/* VIEW DETAILS */}
                   <button
                     type='button'
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleCardClick(rideId);
+                      handleCardClick(null, rideId);
                     }}
                     className='mt-8 w-full bg-yellow-400 hover:bg-yellow-500 py-3 rounded-xl font-semibold transition cursor-pointer'
                   >

@@ -1,50 +1,133 @@
 const Joi = require("joi");
 
-const createRideRequestSchema = Joi.object({
-  pickupLocation: Joi.string().trim().min(3).max(100).required().messages({
-    "string.empty": "Pickup location is required",
-  }),
+const coordinatesSchema =
+  Joi.object({
+    latitude: Joi.number()
+      .min(-90)
+      .max(90)
+      .required(),
 
-  destination: Joi.string().trim().min(3).max(100).required().messages({
-    "string.empty": "Destination is required",
-  }),
+    longitude: Joi.number()
+      .min(-180)
+      .max(180)
+      .required(),
+  });
 
-  departureDate: Joi.date().required().messages({
-    "any.required": "Departure date is required",
-  }),
+const createRideRequestSchema =
+  Joi.object({
+    pickupLocation: Joi.string()
+      .trim()
+      .min(3)
+      .max(300)
+      .required()
+      .messages({
+        "string.empty":
+          "Pickup location is required",
+      }),
 
-  departureTime: Joi.string().required().messages({
-    "string.empty": "Departure time is required",
-  }),
+    pickupELoc: Joi.string()
+      .trim()
+      .allow(null, "")
+      .max(20)
+      .optional(),
 
-  seatsRequired: Joi.number().integer().min(1).max(5).default(1),
+    /*
+     * Frontend no longer needs to provide
+     * coordinates.
+     *
+     * Backend resolves them.
+     */
+    pickupCoordinates:
+      coordinatesSchema.optional(),
 
-  notes: Joi.string().allow("").max(300),
+    destination: Joi.string()
+      .trim()
+      .min(3)
+      .max(300)
+      .required()
+      .messages({
+        "string.empty":
+          "Destination is required",
+      }),
 
-  pickupCoordinates: Joi.object({
-    latitude: Joi.number().required(),
-    longitude: Joi.number().required(),
-  }).optional(),
+    destinationELoc: Joi.string()
+      .trim()
+      .allow(null, "")
+      .max(20)
+      .optional(),
 
-  destinationCoordinates: Joi.object({
-    latitude: Joi.number().required(),
-    longitude: Joi.number().required(),
-  }).optional(),
-});
+    destinationCoordinates:
+      coordinatesSchema.optional(),
 
-const updateRideRequestSchema = Joi.object({
-  pickupLocation: Joi.string().trim().min(3).max(100),
+    departureDate: Joi.date()
+      .required()
+      .messages({
+        "any.required":
+          "Departure date is required",
+      }),
 
-  destination: Joi.string().trim().min(3).max(100),
+    departureTime: Joi.string()
+      .trim()
+      .required()
+      .messages({
+        "string.empty":
+          "Departure time is required",
+      }),
 
-  departureDate: Joi.date(),
+    seatsRequired: Joi.number()
+      .integer()
+      .min(1)
+      .max(4)
+      .default(1),
 
-  departureTime: Joi.string(),
+    notes: Joi.string()
+      .allow("")
+      .max(300)
+      .default(""),
+  });
 
-  seatsRequired: Joi.number().integer().min(1).max(5),
+const updateRideRequestSchema =
+  Joi.object({
+    pickupLocation: Joi.string()
+      .trim()
+      .min(3)
+      .max(300),
 
-  notes: Joi.string().allow("").max(300),
-});
+    pickupELoc: Joi.string()
+      .trim()
+      .allow(null, "")
+      .max(20),
+
+    pickupCoordinates:
+      coordinatesSchema,
+
+    destination: Joi.string()
+      .trim()
+      .min(3)
+      .max(300),
+
+    destinationELoc: Joi.string()
+      .trim()
+      .allow(null, "")
+      .max(20),
+
+    destinationCoordinates:
+      coordinatesSchema,
+
+    departureDate: Joi.date(),
+
+    departureTime: Joi.string()
+      .trim(),
+
+    seatsRequired: Joi.number()
+      .integer()
+      .min(1)
+      .max(4),
+
+    notes: Joi.string()
+      .allow("")
+      .max(300),
+  });
 
 module.exports = {
   createRideRequestSchema,
