@@ -15,20 +15,10 @@ const RideMap = ({
   const destinationSearchRef = useRef(null);
 
   const callbackRef = useRef(onLocationSelect);
-
-  /*
-   * Keep latest callback without
-   * recreating Mappls search.
-   */
   useEffect(() => {
     callbackRef.current = onLocationSelect;
   }, [onLocationSelect]);
 
-  /*
-   * ---------------------------------------------------------
-   * Validate coordinates
-   * ---------------------------------------------------------
-   */
   const isValidCoordinates = (latitude, longitude) => {
     return (
       Number.isFinite(Number(latitude)) &&
