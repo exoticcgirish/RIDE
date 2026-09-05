@@ -16,21 +16,34 @@ const {
   updateRideRequestSchema,
 } = require("../validators/rideRequest.validator.js");
 
+/*
+|--------------------------------------------------------------------------
+| CREATE RIDE REQUEST
+|--------------------------------------------------------------------------
+*/
+
 exports.create = async (req, res) => {
   try {
-    console.log(
-      "[rideRequest] create called by:",
-      req.user && req.user.id,
-    );
+    console.log("[rideRequest] create called by:", req.user && req.user.id);
 
     console.log("[rideRequest] payload:", req.body);
 
-    const { error } = createRideRequestSchema.validate(
-      req.body,
-      {
-        abortEarly: true,
-      },
-    );
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE REQUEST
+    |--------------------------------------------------------------------------
+    */
+
+    const { error } = createRideRequestSchema.validate(req.body, {
+      abortEarly: true,
+    });
 
     if (error) {
       return res.status(400).json({
@@ -39,34 +52,60 @@ exports.create = async (req, res) => {
       });
     }
 
-    const result = await createRideRequest(
-      req.user.id,
-      req.body,
-    );
+    /*
+    |--------------------------------------------------------------------------
+    | CREATE RIDE
+    |--------------------------------------------------------------------------
+    |
+    | RabbitMQ ride_created event is already published
+    | inside createRideRequest().
+    |
+    */
+
+    const result = await createRideRequest(req.user.id, req.body);
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSE
+    |--------------------------------------------------------------------------
+    */
 
     return res.status(201).json({
       success: true,
       message: "Ride request created successfully.",
-      data: result,
+      data: result.rideRequest || null,
+      group: result.group || null,
     });
   } catch (err) {
     console.error("Create ride error:", err);
 
     return res.status(500).json({
       success: false,
-      message:
-        err.message || "Failed to create ride request.",
+      message: err.message || "Failed to create ride request.",
     });
   }
 };
+
+/*
+|--------------------------------------------------------------------------
+| GET DRIVER LOCATION
+|--------------------------------------------------------------------------
+*/
 
 exports.getDriverLocation = async (req, res) => {
   try {
     const { rideRequestId } = req.params;
 
-    const rideRequest = await RideRequest.findById(
-      rideRequestId,
-    ).select("driverLocation assignedDriver");
+    if (!rideRequestId) {
+      return res.status(400).json({
+        success: false,
+        message: "Ride request ID is required.",
+      });
+    }
+
+    const rideRequest = await RideRequest.findById(rideRequestId).select(
+      "driverLocation assignedDriver",
+    );
 
     if (!rideRequest) {
       return res.status(404).json({
@@ -102,10 +141,7 @@ exports.getDriverLocation = async (req, res) => {
       driverLocation: location,
     });
   } catch (error) {
-    console.error(
-      "Get driver location error:",
-      error,
-    );
+    console.error("Get driver location error:", error);
 
     return res.status(500).json({
       success: false,
@@ -114,34 +150,58 @@ exports.getDriverLocation = async (req, res) => {
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| GET MY RIDE REQUESTS
+|--------------------------------------------------------------------------
+*/
+
 exports.getMine = async (req, res) => {
   try {
-    const requests = await getMyRideRequests(
-      req.user.id,
-    );
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    const requests = await getMyRideRequests(req.user.id);
+
+    const safeRequests = Array.isArray(requests) ? requests : [];
 
     return res.status(200).json({
       success: true,
-      count: Array.isArray(requests)
-        ? requests.length
-        : 0,
-      data: Array.isArray(requests) ? requests : [],
+      count: safeRequests.length,
+      data: safeRequests,
     });
   } catch (err) {
     console.error("Get Ride Requests Error:", err);
 
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: err.message || "Failed to get ride requests.",
     });
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| GET RIDE REQUEST BY ID
+|--------------------------------------------------------------------------
+*/
+
 exports.getById = async (req, res) => {
   try {
-    const rideRequest = await getRideRequestById(
-      req.params.id,
-    );
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Ride request ID is required.",
+      });
+    }
+
+    const rideRequest = await getRideRequestById(id);
 
     if (!rideRequest) {
       return res.status(404).json({
@@ -159,19 +219,29 @@ exports.getById = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: err.message || "Failed to get ride request.",
     });
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| UPDATE RIDE REQUEST
+|--------------------------------------------------------------------------
+*/
+
 exports.update = async (req, res) => {
   try {
-    const { error } = updateRideRequestSchema.validate(
-      req.body,
-      {
-        abortEarly: true,
-      },
-    );
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    const { error } = updateRideRequestSchema.validate(req.body, {
+      abortEarly: true,
+    });
 
     if (error) {
       return res.status(400).json({
@@ -203,17 +273,27 @@ exports.update = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: err.message || "Failed to update ride request.",
     });
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| CANCEL RIDE REQUEST
+|--------------------------------------------------------------------------
+*/
+
 exports.cancel = async (req, res) => {
   try {
-    const rideRequest = await cancelRideRequest(
-      req.params.id,
-      req.user.id,
-    );
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    const rideRequest = await cancelRideRequest(req.params.id, req.user.id);
 
     if (!rideRequest) {
       return res.status(404).json({
@@ -232,17 +312,27 @@ exports.cancel = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: err.message || "Failed to cancel ride request.",
     });
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| DELETE RIDE REQUEST
+|--------------------------------------------------------------------------
+*/
+
 exports.remove = async (req, res) => {
   try {
-    const rideRequest = await deleteRideRequest(
-      req.params.id,
-      req.user.id,
-    );
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    const rideRequest = await deleteRideRequest(req.params.id, req.user.id);
 
     if (!rideRequest) {
       return res.status(404).json({
@@ -260,18 +350,20 @@ exports.remove = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: err.message || "Failed to delete ride request.",
     });
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| SEARCH RIDE REQUESTS
+|--------------------------------------------------------------------------
+*/
+
 exports.search = async (req, res) => {
   try {
-    const {
-      pickupLocation,
-      destination,
-      departureDate,
-    } = req.query;
+    const { pickupLocation, destination, departureDate } = req.query;
 
     const requests = await searchRideRequests(
       pickupLocation,
@@ -279,22 +371,28 @@ exports.search = async (req, res) => {
       departureDate,
     );
 
+    const safeRequests = Array.isArray(requests) ? requests : [];
+
     return res.status(200).json({
       success: true,
-      count: Array.isArray(requests)
-        ? requests.length
-        : 0,
-      data: Array.isArray(requests) ? requests : [],
+      count: safeRequests.length,
+      data: safeRequests,
     });
   } catch (err) {
     console.error("Search ride requests error:", err);
 
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: err.message || "Failed to search ride requests.",
     });
   }
 };
+
+/*
+|--------------------------------------------------------------------------
+| ACCEPT / ASSIGN DRIVER
+|--------------------------------------------------------------------------
+*/
 
 exports.accept = async (req, res) => {
   try {
@@ -330,7 +428,7 @@ exports.accept = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: err.message || "Failed to assign driver.",
     });
   }
 };

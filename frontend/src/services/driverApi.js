@@ -30,18 +30,41 @@ export const getDriverStatus = () => {
 |--------------------------------------------------------------------------
 */
 
-export const getAvailableRideGroups = () => {
-  return API.get("/ride-groups/available");
+/*
+ * Available ride groups with pagination.
+ *
+ * Example:
+ * getAvailableRideGroups(1, 10)
+ *
+ * Request:
+ * GET /ride-groups/available?page=1&limit=10
+ */
+export const getAvailableRideGroups = (page = 1, limit = 10) => {
+  return API.get("/ride-groups/available", {
+    params: {
+      page,
+      limit,
+    },
+  });
 };
 
+/*
+ * Accepted groups.
+ */
 export const getAcceptedRideGroups = () => {
   return API.get("/ride-groups/accepted");
 };
 
+/*
+ * Current rider group.
+ */
 export const getCurrentGroup = () => {
   return API.get("/ride-groups/mine");
 };
 
+/*
+ * Accept ride group.
+ */
 export const acceptRideGroup = (groupId) => {
   return API.patch(`/ride-groups/${groupId}/accept`);
 };
@@ -78,11 +101,7 @@ export const completeRide = (groupId) => {
 |--------------------------------------------------------------------------
 */
 
-export const updateDriverLocation = (
-  rideRequestId,
-  latitude,
-  longitude,
-) => {
+export const updateDriverLocation = (rideRequestId, latitude, longitude) => {
   return API.put("/drivers/location", {
     rideRequestId,
     latitude,

@@ -34,7 +34,6 @@ function AcceptedGroups() {
   const [otpGroup, setOtpGroup] = useState(null);
   const [otp, setOtp] = useState("");
   const [verifyingOtp, setVerifyingOtp] = useState(false);
-
   const [completingId, setCompletingId] = useState(null);
 
   const getDriverName = (driver) => {
@@ -104,11 +103,25 @@ function AcceptedGroups() {
 
       console.log("Accepted groups response:", response.data);
 
-      const data = response.data?.data || response.data?.groups || [];
+      const responseData = response.data;
 
-      setGroups(Array.isArray(data) ? data : []);
+      let data = [];
+
+      if (Array.isArray(responseData)) {
+        data = responseData;
+      } else if (Array.isArray(responseData?.data)) {
+        data = responseData.data;
+      } else if (Array.isArray(responseData?.groups)) {
+        data = responseData.groups;
+      } else if (Array.isArray(responseData?.data?.groups)) {
+        data = responseData.data.groups;
+      }
+
+      setGroups(data);
     } catch (error) {
       console.error("Accepted groups error:", error);
+
+      setGroups([]);
 
       setError(
         error.response?.data?.message || "Failed to load accepted groups.",
@@ -158,16 +171,13 @@ function AcceptedGroups() {
     );
   };
 
-  const totalRiders = groups.reduce(
-    (total, group) =>
-      total + (Array.isArray(group.members) ? group.members.length : 0),
-    0,
-  );
+  const totalRiders = groups.reduce((total, group) => {
+    return total + (Array.isArray(group.members) ? group.members.length : 0);
+  }, 0);
 
-  const totalSeats = groups.reduce(
-    (total, group) => total + Number(group.totalSeats || 0),
-    0,
-  );
+  const totalSeats = groups.reduce((total, group) => {
+    return total + Number(group.totalSeats || 0);
+  }, 0);
 
   const activeRide = groups.find((group) => group?.status === "in_progress");
 
@@ -187,12 +197,13 @@ function AcceptedGroups() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const latitude = position.coords.latitude;
-
         const longitude = position.coords.longitude;
 
         try {
           for (const group of activeGroups) {
-            for (const member of group.members || []) {
+            const members = Array.isArray(group.members) ? group.members : [];
+
+            for (const member of members) {
               const rideRequestId = member?._id;
 
               if (!rideRequestId) {
@@ -211,8 +222,8 @@ function AcceptedGroups() {
           );
         }
       },
-      (error) => {
-        console.error("Location permission/error:", error.message);
+      (locationError) => {
+        console.error("Location permission/error:", locationError.message);
       },
       {
         enableHighAccuracy: true,
@@ -224,7 +235,7 @@ function AcceptedGroups() {
 
   useEffect(() => {
     if (!activeRide) {
-      return;
+      return undefined;
     }
 
     sendCurrentLocation();
@@ -233,8 +244,10 @@ function AcceptedGroups() {
       sendCurrentLocation();
     }, 5000);
 
-    return () => clearInterval(interval);
-  }, [groups]);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [activeRide?._id, activeRide?.status]);
 
   const openOtpModal = (group) => {
     setOtpGroup(group);
@@ -322,7 +335,7 @@ function AcceptedGroups() {
         navigate("/dashboard", {
           replace: true,
         });
-      }, 500);
+      }, 700);
     } catch (error) {
       console.error("Complete ride error:", error);
 
@@ -334,14 +347,14 @@ function AcceptedGroups() {
 
   const getStatusClasses = (status) => {
     if (status === "in_progress") {
-      return "bg-blue-50 text-blue-700";
+      return "bg-blue-50 text-blue-700 border border-blue-100";
     }
 
     if (status === "completed") {
-      return "bg-gray-100 text-gray-600";
+      return "bg-gray-100 text-gray-600 border border-gray-200";
     }
 
-    return "bg-green-50 text-green-700";
+    return "bg-green-50 text-green-700 border border-green-100";
   };
 
   const getStatusLabel = (status) => {
@@ -409,7 +422,7 @@ function AcceptedGroups() {
               My Accepted Groups
             </h2>
 
-            <p className='text-gray-500 mt-2'>
+            <p className='text-gray-500 mt-2 max-w-2xl'>
               Manage your accepted rides, start them with OTP, and complete them
               after the trip.
             </p>
@@ -665,7 +678,7 @@ function AcceptedGroups() {
 
                             <p
                               title={group.pickupLocation || "N/A"}
-                              className='font-bold mt-1 text-base sm:text-lg leading-6 truncate'
+                              className='font-bold mt-1 text-base sm:text-lg leading-6 break-words'
                             >
                               {group.pickupLocation || "N/A"}
                             </p>
@@ -678,7 +691,7 @@ function AcceptedGroups() {
 
                             <p
                               title={group.destination || "N/A"}
-                              className='font-bold mt-1 text-base sm:text-lg leading-6 truncate'
+                              className='font-bold mt-1 text-base sm:text-lg leading-6 break-words'
                             >
                               {group.destination || "N/A"}
                             </p>
@@ -944,10 +957,12 @@ function AcceptedGroups() {
                 autoComplete='one-time-code'
                 maxLength={4}
                 value={otp}
+                autoFocus
                 onChange={(event) => {
                   const value = event.target.value.replace(/\D/g, "");
 
                   setOtp(value.slice(0, 4));
+                  setError("");
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
