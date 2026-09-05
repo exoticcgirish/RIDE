@@ -3,7 +3,8 @@ import axios from "axios";
 const API = axios.create({
   baseURL:
     import.meta.env.VITE_API_BASE_URL ||
-    "http://localhost:7001/api",
+    "http://localhost:7001/api" ||
+    "https://ridelink-backend-g0pb.onrender.com/api",
 
   withCredentials: true,
 });
@@ -20,7 +21,7 @@ API.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 export default API;
