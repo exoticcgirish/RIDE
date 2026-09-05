@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+
 import {
   Users,
   CheckCircle,
@@ -35,6 +36,10 @@ function AdminDashboard({ onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ==================================================
+  // STATE
+  // ==================================================
+
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -43,10 +48,18 @@ function AdminDashboard({ onLogout }) {
   });
 
   const [drivers, setDrivers] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [actionLoading, setActionLoading] = useState("");
+
   const [error, setError] = useState("");
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // ==================================================
+  // ADMIN MENU
+  // ==================================================
 
   const menu = [
     {
@@ -91,94 +104,172 @@ function AdminDashboard({ onLogout }) {
     },
   ];
 
+  // ==================================================
+  // LOAD DASHBOARD
+  // ==================================================
+
   const loadDashboard = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const [statsRes, pendingRes] = await Promise.all([
+      const [statsResponse, pendingResponse] = await Promise.all([
         getDashboardStats(),
         getPendingDrivers(),
       ]);
 
-      setStats(
-        statsRes?.data?.data || {
-          total: 0,
-          pending: 0,
-          approved: 0,
-          rejected: 0,
-        },
-      );
+      console.log("Dashboard stats:", statsResponse);
+      console.log("Pending drivers:", pendingResponse);
 
-      setDrivers(pendingRes?.data?.data || []);
+      // ----------------------------------------------
+      // STATS
+      // ----------------------------------------------
+
+      const statsData = statsResponse?.data?.data || statsResponse?.data || {};
+
+      setStats({
+        total:
+          Number(
+            statsData?.total ??
+              statsData?.totalDrivers ??
+              statsData?.drivers ??
+              0,
+          ) || 0,
+
+        pending:
+          Number(
+            statsData?.pending ??
+              statsData?.pendingDrivers ??
+              statsData?.pendingApproval ??
+              0,
+          ) || 0,
+
+        approved:
+          Number(statsData?.approved ?? statsData?.approvedDrivers ?? 0) || 0,
+
+        rejected:
+          Number(statsData?.rejected ?? statsData?.rejectedDrivers ?? 0) || 0,
+      });
+
+      // ----------------------------------------------
+      // PENDING DRIVERS
+      // ----------------------------------------------
+
+      const pendingData =
+        pendingResponse?.data?.data || pendingResponse?.data || [];
+
+      setDrivers(Array.isArray(pendingData) ? pendingData : []);
     } catch (err) {
       console.error("Admin dashboard error:", err);
 
       setError(
-        err.response?.data?.message ||
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
           "Unable to load admin dashboard. Please try again.",
       );
+
+      setDrivers([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // ==================================================
+  // INITIAL LOAD
+  // ==================================================
+
   useEffect(() => {
     loadDashboard();
   }, []);
-  const handleApprove = async (id) => {
+
+  // ==================================================
+  // APPROVE DRIVER
+  // ==================================================
+
+  const handleApprove = async (driver) => {
+    const driverId = driver?._id || driver?.id;
+
+    if (!driverId) {
+      setError("Driver ID is missing.");
+      return;
+    }
+
+    const driverName = getDriverName(driver);
+
     const confirmed = window.confirm(
-      "Are you sure you want to approve this driver?",
+      `Are you sure you want to approve ${driverName}?`,
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
-      setActionLoading(id);
+      setActionLoading(driverId);
       setError("");
 
-      await approveDriver(id);
+      await approveDriver(driverId);
 
+      // Refresh dashboard after approval
       await loadDashboard();
     } catch (err) {
       console.error("Approve driver error:", err);
 
-      setError(err.response?.data?.message || "Failed to approve driver.");
+      setError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Failed to approve driver.",
+      );
     } finally {
       setActionLoading("");
     }
   };
 
-  // --------------------------------------------------
-  // Reject Driver
-  // --------------------------------------------------
+  // ==================================================
+  // REJECT DRIVER
+  // ==================================================
 
-  const handleReject = async (id) => {
-    const reason = window.prompt("Enter rejection reason:");
+  const handleReject = async (driver) => {
+    const driverId = driver?._id || driver?.id;
+
+    if (!driverId) {
+      setError("Driver ID is missing.");
+      return;
+    }
+
+    const driverName = getDriverName(driver);
+
+    const reason = window.prompt(`Enter rejection reason for ${driverName}:`);
 
     if (!reason || !reason.trim()) {
       return;
     }
 
     try {
-      setActionLoading(id);
+      setActionLoading(driverId);
       setError("");
 
-      await rejectDriver(id, reason.trim());
+      await rejectDriver(driverId, reason.trim());
 
+      // Refresh dashboard after rejection
       await loadDashboard();
     } catch (err) {
       console.error("Reject driver error:", err);
 
-      setError(err.response?.data?.message || "Failed to reject driver.");
+      setError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Failed to reject driver.",
+      );
     } finally {
       setActionLoading("");
     }
   };
 
-  // --------------------------------------------------
-  // Logout
-  // --------------------------------------------------
+  // ==================================================
+  // LOGOUT
+  // ==================================================
 
   const handleLogout = () => {
     setMobileMenuOpen(false);
@@ -188,53 +279,92 @@ function AdminDashboard({ onLogout }) {
     }
   };
 
-  // --------------------------------------------------
-  // Navigation Click
-  // --------------------------------------------------
+  // ==================================================
+  // NAVIGATION
+  // ==================================================
 
   const handleNavigation = (path) => {
     navigate(path);
     setMobileMenuOpen(false);
   };
 
-  // --------------------------------------------------
-  // Driver Name
-  // --------------------------------------------------
+  // ==================================================
+  // ACTIVE MENU
+  // ==================================================
+
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
+  // ==================================================
+  // DRIVER NAME
+  // ==================================================
 
   const getDriverName = (driver) => {
     return (
-      driver?.full_name || driver?.name || driver?.fullName || "Unknown Driver"
+      driver?.full_name ||
+      driver?.fullName ||
+      driver?.name ||
+      driver?.username ||
+      driver?.user?.full_name ||
+      driver?.user?.name ||
+      "Unknown Driver"
     );
   };
 
-  // --------------------------------------------------
-  // Vehicle Type
-  // --------------------------------------------------
+  // ==================================================
+  // VEHICLE TYPE
+  // ==================================================
 
   const getVehicleType = (driver) => {
     return (
       driver?.vehicleType ||
+      driver?.vehicle_type ||
       driver?.vehicleName ||
+      driver?.vehicle_name ||
       driver?.vehicle ||
       "Not provided"
     );
   };
 
-  // --------------------------------------------------
-  // Vehicle Number
-  // --------------------------------------------------
+  // ==================================================
+  // VEHICLE NUMBER
+  // ==================================================
 
   const getVehicleNumber = (driver) => {
-    return driver?.vehicleNumber || "Not provided";
+    return (
+      driver?.vehicleNumber ||
+      driver?.vehicle_number ||
+      driver?.registrationNumber ||
+      driver?.registration_number ||
+      "Not provided"
+    );
   };
 
-  // --------------------------------------------------
-  // Active menu
-  // --------------------------------------------------
+  // ==================================================
+  // LICENSE NUMBER
+  // ==================================================
 
-  const isActive = (path) => {
-    return location.pathname === path;
+  const getLicenseNumber = (driver) => {
+    return (
+      driver?.licenseNumber ||
+      driver?.license_number ||
+      driver?.license ||
+      "Not provided"
+    );
   };
+
+  // ==================================================
+  // DRIVER ID
+  // ==================================================
+
+  const getDriverId = (driver) => {
+    return driver?._id || driver?.id;
+  };
+
+  // ==================================================
+  // RETURN
+  // ==================================================
 
   return (
     <div className='min-h-screen bg-gray-100'>
@@ -260,6 +390,8 @@ function AdminDashboard({ onLogout }) {
             {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
+
+        {/* MOBILE MENU */}
 
         {mobileMenuOpen && (
           <div className='border-t border-gray-100 bg-white px-4 py-4'>
@@ -304,7 +436,7 @@ function AdminDashboard({ onLogout }) {
       ================================================== */}
 
       <aside className='hidden lg:flex fixed left-0 top-0 bottom-0 w-72 bg-white border-r border-gray-200 flex-col z-40'>
-        {/* Logo */}
+        {/* LOGO */}
 
         <div className='px-7 py-7 border-b border-gray-100'>
           <h1 className='text-3xl font-extrabold text-gray-900'>
@@ -314,7 +446,7 @@ function AdminDashboard({ onLogout }) {
           <p className='text-sm text-gray-500 mt-1'>Administration Panel</p>
         </div>
 
-        {/* Navigation */}
+        {/* NAVIGATION */}
 
         <nav className='flex-1 p-5 space-y-2 overflow-y-auto'>
           {menu.map((item) => {
@@ -339,7 +471,7 @@ function AdminDashboard({ onLogout }) {
           })}
         </nav>
 
-        {/* Logout */}
+        {/* LOGOUT */}
 
         <div className='p-5 border-t border-gray-100'>
           <button
@@ -361,7 +493,7 @@ function AdminDashboard({ onLogout }) {
       <main className='lg:ml-72'>
         <div className='max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-6 sm:py-8'>
           {/* ==================================================
-              PAGE HEADER
+              HEADER
           ================================================== */}
 
           <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-8'>
@@ -380,6 +512,8 @@ function AdminDashboard({ onLogout }) {
             </div>
 
             <div className='flex items-center gap-3'>
+              {/* REFRESH */}
+
               <button
                 type='button'
                 onClick={loadDashboard}
@@ -392,6 +526,8 @@ function AdminDashboard({ onLogout }) {
                 />
                 Refresh
               </button>
+
+              {/* ADMIN ACCOUNT */}
 
               <div className='hidden sm:flex items-center gap-3 bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-3'>
                 <div className='w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center'>
@@ -406,19 +542,37 @@ function AdminDashboard({ onLogout }) {
               </div>
             </div>
           </div>
+
+          {/* ==================================================
+              ERROR
+          ================================================== */}
+
           {error && (
             <div className='mb-6 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 flex items-start gap-3'>
               <XCircle size={21} className='text-red-500 mt-0.5 shrink-0' />
 
-              <div>
+              <div className='flex-1'>
                 <p className='font-semibold text-red-700'>
                   Something went wrong
                 </p>
 
                 <p className='text-sm text-red-600 mt-1'>{error}</p>
               </div>
+
+              <button
+                type='button'
+                onClick={() => setError("")}
+                className='text-red-400 hover:text-red-600'
+              >
+                <X size={18} />
+              </button>
             </div>
           )}
+
+          {/* ==================================================
+              STATISTICS
+          ================================================== */}
+
           <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8'>
             <StatCard
               title='Total Drivers'
@@ -454,11 +608,11 @@ function AdminDashboard({ onLogout }) {
           </div>
 
           {/* ==================================================
-              PENDING DRIVER SECTION
+              PENDING DRIVERS
           ================================================== */}
 
           <section className='bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden'>
-            {/* Section Header */}
+            {/* HEADER */}
 
             <div className='p-5 sm:p-7 border-b border-gray-100'>
               <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
@@ -488,7 +642,7 @@ function AdminDashboard({ onLogout }) {
               </div>
             </div>
 
-            {/* Content */}
+            {/* CONTENT */}
 
             <div className='p-5 sm:p-7'>
               {loading ? (
@@ -497,18 +651,23 @@ function AdminDashboard({ onLogout }) {
                 <EmptyState />
               ) : (
                 <div className='grid grid-cols-1 xl:grid-cols-2 gap-5'>
-                  {drivers.map((driver) => (
-                    <DriverCard
-                      key={driver._id}
-                      driver={driver}
-                      driverName={getDriverName(driver)}
-                      vehicleType={getVehicleType(driver)}
-                      vehicleNumber={getVehicleNumber(driver)}
-                      loading={actionLoading === driver._id}
-                      onApprove={handleApprove}
-                      onReject={handleReject}
-                    />
-                  ))}
+                  {drivers.map((driver) => {
+                    const driverId = getDriverId(driver);
+
+                    return (
+                      <DriverCard
+                        key={driverId}
+                        driver={driver}
+                        driverName={getDriverName(driver)}
+                        vehicleType={getVehicleType(driver)}
+                        vehicleNumber={getVehicleNumber(driver)}
+                        licenseNumber={getLicenseNumber(driver)}
+                        loading={actionLoading === driverId}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -554,13 +713,14 @@ function DriverCard({
   driverName,
   vehicleType,
   vehicleNumber,
+  licenseNumber,
   loading,
   onApprove,
   onReject,
 }) {
   return (
     <div className='border border-gray-200 rounded-2xl p-5 hover:shadow-md transition bg-gray-50/50'>
-      {/* Driver Header */}
+      {/* DRIVER HEADER */}
 
       <div className='flex items-start justify-between gap-4'>
         <div className='flex items-center gap-4 min-w-0'>
@@ -590,19 +750,24 @@ function DriverCard({
         </span>
       </div>
 
-      {/* Driver Details */}
+      {/* DRIVER DETAILS */}
 
       <div className='mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3'>
         <DetailItem
           icon={<Mail size={17} />}
           label='Email'
-          value={driver?.email || "Not provided"}
+          value={driver?.email || driver?.user?.email || "Not provided"}
         />
 
         <DetailItem
           icon={<Phone size={17} />}
           label='Phone'
-          value={driver?.phone || "Not provided"}
+          value={
+            driver?.phone ||
+            driver?.mobile ||
+            driver?.user?.phone ||
+            "Not provided"
+          }
         />
 
         <DetailItem
@@ -620,17 +785,19 @@ function DriverCard({
         <DetailItem
           icon={<CreditCard size={17} />}
           label='License Number'
-          value={driver?.licenseNumber || driver?.license || "Not provided"}
+          value={licenseNumber}
         />
       </div>
 
-      {/* Buttons */}
+      {/* ACTION BUTTONS */}
 
       <div className='mt-5 pt-5 border-t border-gray-200 flex flex-col sm:flex-row gap-3'>
+        {/* APPROVE */}
+
         <button
           type='button'
           disabled={loading}
-          onClick={() => onApprove(driver._id)}
+          onClick={() => onApprove(driver)}
           className='flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed'
         >
           {loading ? (
@@ -642,10 +809,12 @@ function DriverCard({
           {loading ? "Processing..." : "Approve Driver"}
         </button>
 
+        {/* REJECT */}
+
         <button
           type='button'
           disabled={loading}
-          onClick={() => onReject(driver._id)}
+          onClick={() => onReject(driver)}
           className='flex-1 bg-white border border-red-200 hover:bg-red-50 text-red-600 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed'
         >
           <Ban size={18} />
@@ -677,7 +846,7 @@ function DetailItem({ icon, label, value }) {
 }
 
 // ======================================================
-// LOADING STATE
+// LOADING
 // ======================================================
 
 function LoadingState() {
@@ -695,7 +864,7 @@ function LoadingState() {
 }
 
 // ======================================================
-// EMPTY STATE
+// EMPTY
 // ======================================================
 
 function EmptyState() {

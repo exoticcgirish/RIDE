@@ -4,48 +4,31 @@ import Img from "/assets/ride.png";
 
 function Landing() {
   return (
-    <div className='min-h-screen bg-gray-50 text-gray-900 overflow-x-hidden'>
-      {/* ================= NAVBAR ================= */}
-      <nav className='w-full bg-white border-b border-gray-100'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4'>
-          <div className='flex items-center justify-between'>
-            {/* Logo */}
-            <Link to='/' className='flex items-center'>
-              <h1 className='text-2xl sm:text-3xl font-bold'>
+    <div className='min-h-screen w-full overflow-x-hidden bg-gray-50 text-gray-900'>
+      <nav className='w-full border-b border-gray-100 bg-white'>
+        <div className='mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8'>
+          <div className='flex min-h-[68px] items-center justify-between gap-3 py-3 sm:min-h-[76px] sm:py-4'>
+            <Link
+              to='/'
+              className='flex shrink-0 items-center'
+              aria-label='RideLink Home'
+            >
+              <h1 className='text-2xl font-bold tracking-tight sm:text-3xl'>
                 Ride<span className='text-yellow-500'>Link</span>
               </h1>
             </Link>
 
-            {/* Desktop / Tablet Buttons */}
-            <div className='flex items-center gap-2 sm:gap-4'>
+            <div className='flex items-center gap-2 sm:gap-3 md:gap-4'>
               <Link
                 to='/login'
-                className='
-                  px-4 sm:px-6
-                  py-2
-                  rounded-full
-                  border border-gray-300
-                  hover:bg-gray-100
-                  transition
-                  text-sm sm:text-base
-                '
+                className='rounded-full border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100 active:scale-95 sm:px-6 sm:text-base'
               >
                 Login
               </Link>
 
               <Link
                 to='/register'
-                className='
-                  bg-yellow-400
-                  hover:bg-yellow-500
-                  transition
-                  px-4 sm:px-6
-                  py-2
-                  rounded-full
-                  font-semibold
-                  shadow-lg
-                  text-sm sm:text-base
-                '
+                className='rounded-full bg-yellow-400 px-4 py-2 text-sm font-semibold shadow-md transition hover:bg-yellow-500 active:scale-95 sm:px-6 sm:text-base'
               >
                 Sign Up
               </Link>
@@ -54,53 +37,13 @@ function Landing() {
         </div>
       </nav>
 
-      {/* ================= HERO ================= */}
-      <section
-        className='
-          max-w-7xl
-          mx-auto
-          px-4 sm:px-6 lg:px-8
-          py-10 sm:py-14 lg:py-20
-          grid
-          grid-cols-1
-          lg:grid-cols-2
-          gap-12
-          lg:gap-16
-          items-center
-        '
-      >
-        {/* ---------- LEFT ---------- */}
-        <div className='w-full'>
-          {/* Badge */}
-          <div
-            className='
-              inline-flex
-              items-center
-              bg-yellow-100
-              text-yellow-700
-              px-3 sm:px-4
-              py-2
-              rounded-full
-              mb-5 sm:mb-6
-              text-xs sm:text-sm
-              font-medium
-            '
-          >
-            🚖 Smart Shared Ride Platform
+      <section className='mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-8 px-4 py-10 sm:gap-12 sm:px-6 sm:py-14 md:py-16 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-20'>
+        <div className='w-full min-w-0'>
+          <div className='mb-5 inline-flex max-w-full items-center rounded-full bg-yellow-100 px-3 py-2 text-xs font-medium text-yellow-700 sm:mb-6 sm:px-4 sm:text-sm'>
+            <span className='truncate'>🚖 Smart Shared Ride Platform</span>
           </div>
 
-          {/* Heading */}
-          <h1
-            className='
-              text-4xl
-              sm:text-5xl
-              md:text-6xl
-              lg:text-6xl
-              font-extrabold
-              leading-tight
-              text-gray-900
-            '
-          >
+          <h1 className='max-w-3xl text-[2.45rem] font-extrabold leading-[1.08] tracking-tight text-gray-900 sm:text-5xl md:text-6xl lg:text-6xl'>
             Share Rides.
             <br />
             Save Money.
@@ -108,41 +51,16 @@ function Landing() {
             Travel Smarter.
           </h1>
 
-          {/* Description */}
-          <p
-            className='
-              text-gray-600
-              mt-6 sm:mt-8
-              text-base sm:text-lg
-              leading-7 sm:leading-8
-              max-w-2xl
-            '
-          >
+          <p className='mt-5 max-w-2xl text-base leading-7 text-gray-600 sm:mt-7 sm:text-lg sm:leading-8'>
             RideLink connects passengers travelling in the same direction,
             reducing waiting time, lowering travel cost and helping drivers earn
             more through smart ride matching.
           </p>
 
-          {/* Buttons */}
-          <div className='flex flex-col xs:flex-row sm:flex-row gap-3 sm:gap-5 mt-8 sm:mt-10'>
+          <div className='mt-7 flex w-full flex-col gap-3 sm:mt-9 sm:flex-row sm:gap-4'>
             <Link
               to='/register'
-              className='
-                bg-yellow-400
-                hover:bg-yellow-500
-                transition
-                px-6 sm:px-8
-                py-3 sm:py-4
-                rounded-full
-                font-semibold
-                shadow-xl
-                flex
-                items-center
-                justify-center
-                gap-2
-                text-sm sm:text-base
-                w-full sm:w-auto
-              '
+              className='flex w-full items-center justify-center gap-2 rounded-full bg-yellow-400 px-6 py-3.5 text-sm font-semibold shadow-lg transition hover:bg-yellow-500 active:scale-[0.98] sm:w-auto sm:px-8 sm:py-4 sm:text-base'
             >
               Get Started
               <ArrowRight size={18} />
@@ -150,333 +68,135 @@ function Landing() {
 
             <Link
               to='/login'
-              className='
-                border border-gray-300
-                hover:bg-gray-100
-                px-6 sm:px-8
-                py-3 sm:py-4
-                rounded-full
-                font-semibold
-                text-sm sm:text-base
-                flex
-                items-center
-                justify-center
-                w-full sm:w-auto
-              '
+              className='flex w-full items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3.5 text-sm font-semibold transition hover:bg-gray-100 active:scale-[0.98] sm:w-auto sm:px-8 sm:py-4 sm:text-base'
             >
               Login
             </Link>
           </div>
 
-          {/* ---------- STATS ---------- */}
-          <div
-            className='
-              grid
-              grid-cols-3
-              gap-2 sm:gap-4 lg:gap-6
-              mt-10 sm:mt-14
-            '
-          >
-            {/* Riders */}
-            <div
-              className='
-                bg-white
-                rounded-xl sm:rounded-2xl
-                shadow-md sm:shadow-lg
-                p-3 sm:p-5
-              '
-            >
-              <Users className='text-yellow-500 w-5 h-5 sm:w-6 sm:h-6' />
+          <div className='mt-9 grid grid-cols-3 gap-2.5 sm:mt-12 sm:gap-4 lg:gap-5'>
+            <div className='min-w-0 rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-gray-100 sm:p-5'>
+              <Users className='h-5 w-5 text-yellow-500 sm:h-6 sm:w-6' />
 
-              <h2 className='text-xl sm:text-2xl font-bold mt-2'>0</h2>
+              <h2 className='mt-2 text-xl font-bold sm:text-2xl'>0</h2>
 
-              <p className='text-gray-500 text-xs sm:text-sm'>Riders</p>
+              <p className='mt-0.5 truncate text-xs text-gray-500 sm:text-sm'>
+                Riders
+              </p>
             </div>
 
-            {/* Verified */}
-            <div
-              className='
-                bg-white
-                rounded-xl sm:rounded-2xl
-                shadow-md sm:shadow-lg
-                p-3 sm:p-5
-              '
-            >
-              <ShieldCheck className='text-green-500 w-5 h-5 sm:w-6 sm:h-6' />
+            <div className='min-w-0 rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-gray-100 sm:p-5'>
+              <ShieldCheck className='h-5 w-5 text-green-500 sm:h-6 sm:w-6' />
 
-              <h2 className='text-xl sm:text-2xl font-bold mt-2'>100%</h2>
+              <h2 className='mt-2 text-xl font-bold sm:text-2xl'>100%</h2>
 
-              <p className='text-gray-500 text-xs sm:text-sm'>Verified</p>
+              <p className='mt-0.5 truncate text-xs text-gray-500 sm:text-sm'>
+                Verified
+              </p>
             </div>
 
-            {/* Rating */}
-            <div
-              className='
-                bg-white
-                rounded-xl sm:rounded-2xl
-                shadow-md sm:shadow-lg
-                p-3 sm:p-5
-              '
-            >
-              <Star className='text-yellow-500 fill-yellow-400 w-5 h-5 sm:w-6 sm:h-6' />
+            <div className='min-w-0 rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-gray-100 sm:p-5'>
+              <Star className='h-5 w-5 fill-yellow-400 text-yellow-500 sm:h-6 sm:w-6' />
 
-              <h2 className='text-xl sm:text-2xl font-bold mt-2'>0</h2>
+              <h2 className='mt-2 text-xl font-bold sm:text-2xl'>0</h2>
 
-              <p className='text-gray-500 text-xs sm:text-sm'>Rating</p>
+              <p className='mt-0.5 truncate text-xs text-gray-500 sm:text-sm'>
+                Rating
+              </p>
             </div>
           </div>
         </div>
 
-        {/* ---------- RIGHT / IMAGE ---------- */}
-        <div
-          className='
-            relative
-            flex
-            justify-center
-            items-center
-            w-full
-            min-h-[320px]
-            sm:min-h-[420px]
-            lg:min-h-[500px]
-          '
-        >
-          {/* Background Glow */}
-          <div
-            className='
-              absolute
-              w-64 h-64
-              sm:w-80 sm:h-80
-              lg:w-96 lg:h-96
-              bg-yellow-300
-              rounded-full
-              blur-3xl
-              opacity-30
-            '
-          ></div>
+        <div className='relative flex min-h-[330px] w-full items-center justify-center px-2 sm:min-h-[430px] sm:px-4 lg:min-h-[520px] lg:px-0'>
+          <div className='absolute h-56 w-56 rounded-full bg-yellow-300 opacity-30 blur-3xl sm:h-80 sm:w-80 lg:h-96 lg:w-96' />
 
-          {/* Ride Image */}
           <img
             src={Img}
             alt='RideLink'
-            className='
-              relative
-              z-10
-              w-[280px]
-              sm:w-[380px]
-              md:w-[450px]
-              lg:w-[520px]
-              max-w-full
-              object-contain
-            '
+            className='relative z-10 w-[260px] max-w-[82%] object-contain sm:w-[380px] sm:max-w-[90%] md:w-[450px] lg:w-[520px]'
           />
 
-          {/* ---------- PICKUP CARD ---------- */}
-          <div
-            className='
-              absolute
-              z-20
-              top-2
-              left-0
-              sm:top-8
-              sm:left-2
-              lg:left-0
-              bg-white
-              shadow-xl
-              rounded-xl
-              p-3 sm:p-4
-              max-w-[160px]
-              sm:max-w-none
-            '
-          >
-            <div className='flex gap-2 items-start'>
-              <MapPin className='text-red-500 flex-shrink-0' size={20} />
+          <div className='absolute left-0 top-1 z-20 max-w-[155px] rounded-2xl bg-white p-3 shadow-lg ring-1 ring-gray-100 sm:left-1 sm:top-7 sm:max-w-[190px] sm:p-4 lg:left-0'>
+            <div className='flex items-start gap-2'>
+              <MapPin className='mt-0.5 shrink-0 text-red-500' size={19} />
 
-              <div>
-                <h3 className='font-semibold text-sm sm:text-base'>Pickup</h3>
+              <div className='min-w-0'>
+                <h3 className='text-sm font-semibold sm:text-base'>Pickup</h3>
 
-                <p className='text-xs sm:text-sm text-gray-500'>
+                <p className='mt-0.5 truncate text-xs text-gray-500 sm:text-sm'>
                   GNIOT College
                 </p>
               </div>
             </div>
           </div>
 
-          {/* ---------- SEATS CARD ---------- */}
-          <div
-            className='
-              absolute
-              z-20
-              bottom-2
-              right-0
-              sm:bottom-8
-              sm:right-2
-              lg:right-0
-              bg-white
-              shadow-xl
-              rounded-xl
-              p-3 sm:p-4
-              max-w-[190px]
-              sm:max-w-none
-            '
-          >
-            <p className='font-semibold text-xs sm:text-sm'>
+          <div className='absolute bottom-1 right-0 z-20 max-w-[175px] rounded-2xl bg-white p-3 shadow-lg ring-1 ring-gray-100 sm:bottom-7 sm:right-1 sm:max-w-[210px] sm:p-4 lg:right-0'>
+            <p className='text-xs font-semibold sm:text-sm'>
               🚖 4 Seats Available
             </p>
 
-            <p className='text-xs sm:text-sm text-gray-500 mt-1'>
+            <p className='mt-1 text-xs leading-5 text-gray-500 sm:text-sm'>
               Driver arriving in 3 mins
             </p>
           </div>
         </div>
       </section>
 
-      {/* ================= FEATURES ================= */}
-      <section
-        className='
-          max-w-7xl
-          mx-auto
-          px-4 sm:px-6 lg:px-8
-          py-14 sm:py-20
-        '
-      >
-        <h2
-          className='
-            text-3xl
-            sm:text-4xl
-            font-bold
-            text-center
-            mb-10 sm:mb-14
-          '
-        >
+      <section className='mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20'>
+        <h2 className='mb-8 text-center text-3xl font-bold tracking-tight sm:mb-12 sm:text-4xl'>
           Why Choose RideLink?
         </h2>
 
-        <div
-          className='
-            grid
-            grid-cols-1
-            md:grid-cols-3
-            gap-5 sm:gap-8
-          '
-        >
-          {/* Shared Rides */}
-          <div
-            className='
-              bg-white
-              rounded-2xl sm:rounded-3xl
-              shadow-lg
-              p-6 sm:p-8
-              hover:scale-[1.02]
-              sm:hover:scale-105
-              transition
-              duration-300
-            '
-          >
-            <Users className='text-yellow-500 w-9 h-9 sm:w-10 sm:h-10' />
+        <div className='grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-3 md:gap-8'>
+          <div className='rounded-2xl bg-white p-6 shadow-md ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:rounded-3xl sm:p-8'>
+            <Users className='h-9 w-9 text-yellow-500 sm:h-10 sm:w-10' />
 
-            <h3 className='font-bold text-xl sm:text-2xl mt-5'>Shared Rides</h3>
+            <h3 className='mt-5 text-xl font-bold sm:text-2xl'>Shared Rides</h3>
 
-            <p className='text-gray-500 mt-3 text-sm sm:text-base leading-6'>
+            <p className='mt-3 text-sm leading-6 text-gray-500 sm:text-base'>
               Travel with people going in the same direction.
             </p>
           </div>
 
-          {/* Smart Matching */}
-          <div
-            className='
-              bg-white
-              rounded-2xl sm:rounded-3xl
-              shadow-lg
-              p-6 sm:p-8
-              hover:scale-[1.02]
-              sm:hover:scale-105
-              transition
-              duration-300
-            '
-          >
-            <MapPin className='text-red-500 w-9 h-9 sm:w-10 sm:h-10' />
+          <div className='rounded-2xl bg-white p-6 shadow-md ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:rounded-3xl sm:p-8'>
+            <MapPin className='h-9 w-9 text-red-500 sm:h-10 sm:w-10' />
 
-            <h3 className='font-bold text-xl sm:text-2xl mt-5'>
+            <h3 className='mt-5 text-xl font-bold sm:text-2xl'>
               Smart Matching
             </h3>
 
-            <p className='text-gray-500 mt-3 text-sm sm:text-base leading-6'>
+            <p className='mt-3 text-sm leading-6 text-gray-500 sm:text-base'>
               AI-based route matching for faster pickup.
             </p>
           </div>
 
-          {/* Safe */}
-          <div
-            className='
-              bg-white
-              rounded-2xl sm:rounded-3xl
-              shadow-lg
-              p-6 sm:p-8
-              hover:scale-[1.02]
-              sm:hover:scale-105
-              transition
-              duration-300
-            '
-          >
-            <ShieldCheck className='text-green-500 w-9 h-9 sm:w-10 sm:h-10' />
+          <div className='rounded-2xl bg-white p-6 shadow-md ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:rounded-3xl sm:p-8'>
+            <ShieldCheck className='h-9 w-9 text-green-500 sm:h-10 sm:w-10' />
 
-            <h3 className='font-bold text-xl sm:text-2xl mt-5'>
+            <h3 className='mt-5 text-xl font-bold sm:text-2xl'>
               Safe & Secure
             </h3>
 
-            <p className='text-gray-500 mt-3 text-sm sm:text-base leading-6'>
+            <p className='mt-3 text-sm leading-6 text-gray-500 sm:text-base'>
               Verified drivers with secure authentication.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ================= CTA ================= */}
-      <section
-        className='
-          bg-yellow-400
-          py-14 sm:py-20
-          px-4
-        '
-      >
-        <div className='max-w-5xl mx-auto text-center'>
-          <h2
-            className='
-              text-3xl
-              sm:text-4xl
-              lg:text-5xl
-              font-bold
-            '
-          >
+      <section className='bg-yellow-400 px-4 py-12 sm:py-16 lg:py-20'>
+        <div className='mx-auto max-w-5xl text-center'>
+          <h2 className='text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl'>
             Ready to Ride?
           </h2>
 
-          <p
-            className='
-              mt-4 sm:mt-5
-              text-base
-              sm:text-xl
-              max-w-2xl
-              mx-auto
-            '
-          >
+          <p className='mx-auto mt-4 max-w-2xl text-base leading-7 sm:mt-5 sm:text-xl sm:leading-8'>
             Join thousands of passengers using RideLink every day.
           </p>
 
           <Link
             to='/register'
-            className='
-              mt-7 sm:mt-10
-              inline-block
-              bg-black
-              text-white
-              px-7 sm:px-10
-              py-3 sm:py-4
-              rounded-full
-              text-base sm:text-lg
-              hover:bg-gray-900
-              transition
-            '
+            className='mt-7 inline-flex items-center justify-center rounded-full bg-black px-7 py-3.5 text-base font-semibold text-white transition hover:bg-gray-900 active:scale-[0.98] sm:mt-9 sm:px-10 sm:py-4 sm:text-lg'
           >
             Create Free Account
           </Link>

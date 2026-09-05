@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import Loader from "../ui/Loader";
 import { login } from "../../services/authApi";
 import { toast } from "react-toastify";
@@ -40,11 +41,11 @@ function LoginForm({ role, onMessage, onLogin }) {
         replace: true,
       });
     } catch (error) {
-      // console.error("Login error:", error);
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
         "Login failed. Please check your credentials.";
+
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -56,9 +57,22 @@ function LoginForm({ role, onMessage, onLogin }) {
       <div className='w-full max-w-md mx-auto'>
         <form
           onSubmit={handleSubmit}
-          className='w-full bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8 md:p-10'
+          className='w-full bg-white rounded-3xl shadow-xl border border-gray-100 p-5 sm:p-7 md:p-8'
         >
-          {/* Logo */}
+          <button
+            type='button'
+            onClick={() => navigate("/")}
+            className='inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 font-semibold text-sm sm:text-base transition-colors duration-200 group mb-6'
+          >
+            <span className='w-9 h-9 rounded-full bg-gray-100 group-hover:bg-yellow-100 flex items-center justify-center transition-colors duration-200'>
+              <ArrowLeft
+                size={18}
+                className='group-hover:-translate-x-0.5 transition-transform duration-200'
+              />
+            </span>
+            Back to Home
+          </button>
+
           <div className='text-center mb-7'>
             <h2 className='text-3xl sm:text-4xl font-extrabold tracking-tight'>
               <span className='text-gray-900'>Ride</span>
@@ -70,7 +84,6 @@ function LoginForm({ role, onMessage, onLogin }) {
             </p>
           </div>
 
-          {/* Role */}
           <div className='mb-6 rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 text-center'>
             <p className='text-sm text-gray-600'>
               Signing in as{" "}
@@ -78,7 +91,6 @@ function LoginForm({ role, onMessage, onLogin }) {
             </p>
           </div>
 
-          {/* Email */}
           <div className='mb-5'>
             <label
               htmlFor='login-email'
@@ -94,12 +106,11 @@ function LoginForm({ role, onMessage, onLogin }) {
               onChange={(e) => setEmail(e.target.value)}
               placeholder='Enter your email'
               autoComplete='email'
-              className='w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 outline-none transition focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200'
+              className='w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 outline-none transition-all duration-200 focus:bg-white focus:border-yellow-400 focus:ring-4 focus:ring-yellow-100'
               required
             />
           </div>
 
-          {/* Password */}
           <div className='mb-3'>
             <label
               htmlFor='login-password'
@@ -115,27 +126,25 @@ function LoginForm({ role, onMessage, onLogin }) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder='Enter your password'
               autoComplete='current-password'
-              className='w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 outline-none transition focus:bg-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200'
+              className='w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 outline-none transition-all duration-200 focus:bg-white focus:border-yellow-400 focus:ring-4 focus:ring-yellow-100'
               required
             />
           </div>
 
-          {/* Forgot Password */}
           <div className='flex justify-end mb-6'>
             <button
               type='button'
               onClick={() => toast.info("Password reset is not available yet.")}
-              className='text-sm font-semibold text-yellow-600 hover:text-yellow-700 hover:underline'
+              className='text-sm font-semibold text-yellow-600 hover:text-yellow-700 hover:underline transition-colors'
             >
               Forgot Password?
             </button>
           </div>
 
-          {/* Login */}
           <button
             type='submit'
             disabled={loading}
-            className='w-full bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-gray-900 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed'
+            className='w-full bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-gray-900 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed'
           >
             {loading ? (
               <>
@@ -147,17 +156,21 @@ function LoginForm({ role, onMessage, onLogin }) {
             )}
           </button>
 
-          {/* Register */}
-          <p className='text-center text-sm text-gray-500 mt-7'>
-            Don't have an account?{" "}
-            <button
-              type='button'
-              onClick={() => navigate("/register")}
-              className='text-yellow-600 font-bold hover:text-yellow-700 hover:underline'
-            >
-              Create Account
-            </button>
-          </p>
+          <div className='flex items-center gap-3 my-6'>
+            <div className='h-px flex-1 bg-gray-200' />
+            <span className='text-xs text-gray-400 uppercase tracking-wider'>
+              New to RideLink?
+            </span>
+            <div className='h-px flex-1 bg-gray-200' />
+          </div>
+
+          <button
+            type='button'
+            onClick={() => navigate("/register")}
+            className='w-full border border-gray-200 bg-gray-50 hover:bg-yellow-50 hover:border-yellow-300 text-gray-700 hover:text-gray-900 py-3.5 rounded-xl font-bold transition-all duration-200'
+          >
+            Create Account
+          </button>
         </form>
       </div>
     </div>

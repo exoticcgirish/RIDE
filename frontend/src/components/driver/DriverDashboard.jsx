@@ -18,6 +18,7 @@ import {
   ArrowRight,
   CarFront,
   ShieldCheck,
+  LogOut,
 } from "lucide-react";
 
 function DriverDashboard() {
@@ -96,7 +97,9 @@ function DriverDashboard() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
-    navigate("/login");
+    navigate("/login", {
+      replace: true,
+    });
   };
 
   const fetchGroups = async () => {
@@ -281,14 +284,19 @@ function DriverDashboard() {
     switch (status) {
       case "accepted":
         return "Accepted";
+
       case "unavailable":
         return "Unavailable";
+
       case "completed":
         return "Completed";
+
       case "cancelled":
         return "Cancelled";
+
       case "ready":
         return "Ready";
+
       default:
         return status || "Ready";
     }
@@ -367,22 +375,26 @@ function DriverDashboard() {
 
   return (
     <div className='min-h-screen bg-[#f7f8fa] text-[#172033]'>
+      {/* HEADER */}
       <header className='sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='h-[76px] flex items-center justify-between'>
-            <div>
+          <div className='min-h-[76px] py-3 flex items-center justify-between gap-3'>
+            {/* LOGO */}
+            <div className='min-w-0'>
               <h1 className='text-2xl sm:text-3xl font-extrabold tracking-tight leading-none'>
                 <span className='text-[#172033]'>Ride</span>
                 <span className='text-[#fdbd00]'>Link</span>
               </h1>
 
-              <p className='text-[11px] sm:text-xs text-gray-400 mt-1'>
+              <p className='text-[10px] sm:text-xs text-gray-400 mt-1'>
                 Driver Dashboard
               </p>
             </div>
 
-            <div className='flex items-center gap-2 sm:gap-3'>
-              <div className='hidden sm:flex items-center gap-2 bg-green-50 border border-green-100 text-green-600 px-4 py-2.5 rounded-full text-sm font-bold'>
+            {/* HEADER ACTIONS */}
+            <div className='flex items-center gap-2 sm:gap-3 shrink-0'>
+              {/* ONLINE */}
+              <div className='hidden md:flex items-center gap-2 bg-green-50 border border-green-100 text-green-600 px-4 py-2.5 rounded-full text-sm font-bold'>
                 <span className='relative flex h-2.5 w-2.5'>
                   <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-50' />
                   <span className='relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500' />
@@ -390,43 +402,55 @@ function DriverDashboard() {
                 Online
               </div>
 
+              {/* REFRESH */}
               <button
                 type='button'
                 onClick={fetchGroups}
                 disabled={loading}
                 title='Refresh ride groups'
-                className='w-11 h-11 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm'
+                aria-label='Refresh ride groups'
+                className='w-10 h-10 sm:w-11 sm:h-11 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm'
               >
                 <RefreshCw
-                  size={20}
+                  size={19}
                   className={
                     loading ? "animate-spin text-[#172033]" : "text-[#172033]"
                   }
                 />
               </button>
 
+              {/* PROFILE */}
               <button
                 type='button'
                 onClick={() => navigate("/driver/profile")}
                 title={`Profile - ${firstName}`}
-                className='group w-11 h-11 rounded-full bg-[#172033] text-white flex items-center justify-center font-extrabold text-base shadow-md hover:scale-105 hover:shadow-lg transition-all duration-200'
+                aria-label={`Open profile for ${firstName}`}
+                className='w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#172033] text-white flex items-center justify-center font-extrabold text-base shadow-md hover:scale-105 hover:shadow-lg transition-all duration-200'
               >
                 {profileInitial}
               </button>
 
+              {/* LOGOUT
+                  FIXED: visible on mobile now */}
               <button
                 type='button'
                 onClick={handleLogout}
-                className='hidden sm:block px-5 py-2.5 rounded-xl bg-red-50 border border-red-100 text-red-600 hover:bg-red-100 hover:border-red-200 font-bold transition-all duration-200'
+                title='Logout'
+                aria-label='Logout'
+                className='h-10 sm:h-11 px-3 sm:px-5 rounded-xl bg-red-50 border border-red-100 text-red-600 hover:bg-red-100 hover:border-red-200 font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm'
               >
-                Logout
+                <LogOut size={18} />
+
+                <span className='hidden sm:inline'>Logout</span>
               </button>
             </div>
           </div>
         </div>
       </header>
 
+      {/* MAIN */}
       <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-9'>
+        {/* PAGE INTRO */}
         <div className='flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mb-8'>
           <div>
             <div className='flex items-center gap-2 mb-2'>
@@ -446,18 +470,23 @@ function DriverDashboard() {
             </p>
           </div>
 
+          {/* ACCEPTED GROUPS */}
           <button
             type='button'
             onClick={() => navigate("/driver/accepted-groups")}
             className='w-full lg:w-auto inline-flex items-center justify-center gap-2 bg-[#172033] hover:bg-[#222d43] text-white px-5 py-3.5 rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-200'
           >
             <CarFront size={19} />
-            My Accepted Groups
+
+            <span>My Accepted Groups</span>
+
             <ArrowRight size={17} />
           </button>
         </div>
 
+        {/* STATS */}
         <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8'>
+          {/* AVAILABLE GROUPS */}
           <div className='group bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200'>
             <div className='flex items-start justify-between'>
               <div>
@@ -480,6 +509,7 @@ function DriverDashboard() {
             </p>
           </div>
 
+          {/* TOTAL RIDERS */}
           <div className='group bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200'>
             <div className='flex items-start justify-between'>
               <div>
@@ -500,6 +530,7 @@ function DriverDashboard() {
             </p>
           </div>
 
+          {/* TOTAL SEATS */}
           <div className='bg-[#172033] rounded-2xl p-5 sm:p-6 shadow-md text-white hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200'>
             <div className='flex items-start justify-between'>
               <div>
@@ -519,6 +550,7 @@ function DriverDashboard() {
           </div>
         </div>
 
+        {/* ERROR */}
         {error && (
           <div className='mb-6 rounded-2xl bg-red-50 border border-red-100 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
             <div className='flex items-start gap-3'>
@@ -543,6 +575,7 @@ function DriverDashboard() {
           </div>
         )}
 
+        {/* LOADING */}
         {loading && (
           <div className='bg-white border border-gray-100 rounded-3xl p-12 sm:p-16 text-center shadow-sm'>
             <div className='w-14 h-14 mx-auto rounded-2xl bg-[#fff5d6] flex items-center justify-center'>
@@ -557,6 +590,7 @@ function DriverDashboard() {
           </div>
         )}
 
+        {/* EMPTY */}
         {!loading && !error && groups.length === 0 && (
           <div className='bg-white border border-gray-100 rounded-3xl p-10 sm:p-16 text-center shadow-sm'>
             <div className='w-20 h-20 mx-auto bg-[#fff5d6] rounded-2xl flex items-center justify-center'>
@@ -582,11 +616,14 @@ function DriverDashboard() {
           </div>
         )}
 
+        {/* RIDE GROUPS */}
         {!loading && !error && groups.length > 0 && (
           <div className='space-y-6'>
             {groups.map((group) => {
               const status = getGroupStatus(group);
+
               const isAccepted = status === "accepted";
+
               const isAccepting = acceptingId === group._id;
 
               const isUnavailable = status === "unavailable";
@@ -603,6 +640,7 @@ function DriverDashboard() {
                     isDisabledStatus ? "opacity-90" : ""
                   }`}
                 >
+                  {/* GROUP HEADER */}
                   <div className='px-5 sm:px-7 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
                     <div className='flex items-center gap-4 min-w-0'>
                       <div className='w-12 h-12 rounded-2xl bg-[#fff5d6] flex items-center justify-center shrink-0'>
@@ -614,7 +652,7 @@ function DriverDashboard() {
                           Ride Group
                         </p>
 
-                        <h3 className='text-lg sm:text-xl font-extrabold mt-0.5'>
+                        <h3 className='text-lg sm:text-xl font-extrabold mt-0.5 truncate'>
                           Group #{group._id?.slice(-6)}
                         </h3>
                       </div>
@@ -629,7 +667,9 @@ function DriverDashboard() {
                     </span>
                   </div>
 
+                  {/* GROUP BODY */}
                   <div className='p-5 sm:p-7'>
+                    {/* ROUTE */}
                     <div className='mb-7'>
                       <div className='flex items-center justify-between mb-5'>
                         <p className='text-xs text-gray-400 font-extrabold uppercase tracking-wider'>
@@ -649,6 +689,7 @@ function DriverDashboard() {
                         </div>
 
                         <div className='flex-1 min-w-0'>
+                          {/* PICKUP */}
                           <div className='min-w-0'>
                             <p className='text-[11px] text-gray-400 font-bold tracking-wide'>
                               PICKUP
@@ -662,6 +703,7 @@ function DriverDashboard() {
                             </p>
                           </div>
 
+                          {/* DESTINATION */}
                           <div className='mt-7 min-w-0'>
                             <p className='text-[11px] text-gray-400 font-bold tracking-wide'>
                               DESTINATION
@@ -678,7 +720,9 @@ function DriverDashboard() {
                       </div>
                     </div>
 
+                    {/* INFO */}
                     <div className='grid grid-cols-2 lg:grid-cols-4 gap-3'>
+                      {/* DATE */}
                       <div className='bg-gray-50 hover:bg-gray-100 rounded-2xl p-4 transition'>
                         <div className='flex items-center gap-2'>
                           <CalendarDays size={17} className='text-[#d99f00]' />
@@ -693,6 +737,7 @@ function DriverDashboard() {
                         </p>
                       </div>
 
+                      {/* TIME */}
                       <div className='bg-gray-50 hover:bg-gray-100 rounded-2xl p-4 transition'>
                         <div className='flex items-center gap-2'>
                           <Clock3 size={17} className='text-[#d99f00]' />
@@ -707,6 +752,7 @@ function DriverDashboard() {
                         </p>
                       </div>
 
+                      {/* MEMBERS */}
                       <div className='bg-gray-50 hover:bg-gray-100 rounded-2xl p-4 transition'>
                         <div className='flex items-center gap-2'>
                           <Users size={17} className='text-[#d99f00]' />
@@ -721,6 +767,7 @@ function DriverDashboard() {
                         </p>
                       </div>
 
+                      {/* SEATS */}
                       <div className='bg-gray-50 hover:bg-gray-100 rounded-2xl p-4 transition'>
                         <div className='flex items-center gap-2'>
                           <CarFront size={17} className='text-[#d99f00]' />
@@ -736,6 +783,7 @@ function DriverDashboard() {
                       </div>
                     </div>
 
+                    {/* MEMBERS */}
                     <div className='mt-7 pt-7 border-t border-gray-100'>
                       <div className='flex items-center justify-between mb-4'>
                         <div>
@@ -802,6 +850,7 @@ function DriverDashboard() {
                       </div>
                     </div>
 
+                    {/* BOTTOM ACTION */}
                     <div className='mt-7 pt-6 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
                       <div className='flex items-center gap-3'>
                         <div className='w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center'>
@@ -867,6 +916,7 @@ function DriverDashboard() {
         )}
       </main>
 
+      {/* MODAL */}
       {modal.open && (
         <div
           className='fixed inset-0 z-[100] flex items-center justify-center p-4'

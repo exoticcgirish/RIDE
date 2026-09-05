@@ -14,7 +14,6 @@ import {
   MapPin,
   CalendarDays,
   Users,
-  ArrowRight,
   RefreshCw,
   Phone,
   Mail,
@@ -216,25 +215,25 @@ function RiderDashboard({ user, onLogout }) {
     {
       title: "Total Requests",
       value: totalRequests,
-      icon: <Car size={28} />,
+      icon: <Car size={26} />,
       color: "bg-yellow-400",
     },
     {
       title: "Pending",
       value: pendingRequests,
-      icon: <Clock3 size={28} />,
+      icon: <Clock3 size={26} />,
       color: "bg-orange-400",
     },
     {
       title: "Completed",
       value: completedRequests,
-      icon: <CheckCircle size={28} />,
+      icon: <CheckCircle size={26} />,
       color: "bg-green-500",
     },
     {
       title: "Cancelled",
       value: cancelledRequests,
-      icon: <XCircle size={28} />,
+      icon: <XCircle size={26} />,
       color: "bg-red-500",
     },
   ];
@@ -322,38 +321,44 @@ function RiderDashboard({ user, onLogout }) {
   };
 
   return (
-    <div className='min-h-screen bg-gray-100'>
-      <header className='bg-white shadow'>
-        <div className='max-w-7xl mx-auto px-8 py-5 flex justify-between items-center'>
-          <div>
-            <h1 className='text-4xl font-bold'>
-              Welcome,
-              <span className='text-yellow-500'> {user?.name || "Rider"}</span>
-            </h1>
+    <div className='min-h-screen bg-gray-100 overflow-x-hidden'>
+      {/* Header */}
+      <header className='bg-white shadow-sm'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5'>
+          <div className='flex justify-between items-center gap-4'>
+            <div className='min-w-0'>
+              <h1 className='text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight'>
+                Welcome,
+                <span className='text-yellow-500'>
+                  {" "}
+                  {user?.name || "Rider"}
+                </span>
+              </h1>
 
-            <p className='text-gray-500 mt-2'>
-              Find or request your next ride.
-            </p>
-          </div>
+              <p className='text-gray-500 mt-1.5 sm:mt-2 text-sm sm:text-base'>
+                Find or request your next ride.
+              </p>
+            </div>
 
-          <div className='flex items-center gap-4'>
-            <button className='w-12 h-12 rounded-full bg-gray-100 hover:bg-yellow-400 transition'>
-              <Bell className='mx-auto' />
-            </button>
+            <div className='flex items-center gap-2 sm:gap-4 shrink-0'>
+              <button className='w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-100 hover:bg-yellow-400 transition flex items-center justify-center'>
+                <Bell size={20} className='sm:w-6 sm:h-6' />
+              </button>
 
-            <button
-              onClick={() => navigate("/profile")}
-              className='w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center'
-            >
-              <UserCircle />
-            </button>
+              <button
+                onClick={() => navigate("/profile")}
+                className='w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-yellow-400 flex items-center justify-center'
+              >
+                <UserCircle size={21} className='sm:w-6 sm:h-6' />
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className='max-w-7xl mx-auto p-8'>
+      <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 lg:py-8'>
         {/* Statistics */}
-        <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6'>
           {stats.map((item) => (
             <motion.div
               key={item.title}
@@ -361,104 +366,121 @@ function RiderDashboard({ user, onLogout }) {
                 y: -5,
                 scale: 1.02,
               }}
-              className='bg-white rounded-3xl shadow-lg p-6'
+              className='bg-white rounded-2xl sm:rounded-3xl shadow-md sm:shadow-lg p-5 sm:p-6'
             >
               <div
-                className={`w-14 h-14 rounded-2xl ${item.color} text-white flex items-center justify-center`}
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl ${item.color} text-white flex items-center justify-center`}
               >
                 {item.icon}
               </div>
 
-              <h2 className='text-3xl font-bold mt-5'>
+              <h2 className='text-2xl sm:text-3xl font-bold mt-4 sm:mt-5'>
                 {requestsLoading ? "..." : item.value}
               </h2>
 
-              <p className='text-gray-500'>{item.title}</p>
+              <p className='text-gray-500 text-sm sm:text-base'>{item.title}</p>
             </motion.div>
           ))}
         </div>
 
         {/* Quick Actions */}
-        <div className='mt-10'>
-          <h2 className='text-2xl font-bold mb-6'>Quick Actions</h2>
+        <div className='mt-8 sm:mt-10'>
+          <h2 className='text-xl sm:text-2xl font-bold mb-4 sm:mb-6'>
+            Quick Actions
+          </h2>
 
-          <div className='grid md:grid-cols-2 xl:grid-cols-4 gap-6'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6'>
             <motion.div
               whileHover={{ y: -8, scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => navigate("/create-ride")}
-              className='cursor-pointer bg-white rounded-3xl shadow-lg p-8'
+              className='cursor-pointer bg-white rounded-2xl sm:rounded-3xl shadow-md sm:shadow-lg p-5 sm:p-8'
             >
-              <div className='w-16 h-16 rounded-2xl bg-yellow-400 flex items-center justify-center text-3xl'>
+              <div className='w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-yellow-400 flex items-center justify-center text-2xl sm:text-3xl'>
                 🚗
               </div>
 
-              <h3 className='font-bold text-2xl mt-5'>Create Ride</h3>
+              <h3 className='font-bold text-xl sm:text-2xl mt-4 sm:mt-5'>
+                Create Ride
+              </h3>
 
-              <p className='text-gray-500 mt-2'>Request a new ride.</p>
+              <p className='text-gray-500 mt-1.5 sm:mt-2 text-sm sm:text-base'>
+                Request a new ride.
+              </p>
             </motion.div>
 
             <motion.div
               whileHover={{ y: -8, scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
-              // onClick={() => navigate("/find-rides")}
-              className='cursor-pointer bg-white rounded-3xl shadow-lg p-8'
+              className='cursor-pointer bg-white rounded-2xl sm:rounded-3xl shadow-md sm:shadow-lg p-5 sm:p-8'
             >
-              <div className='w-16 h-16 rounded-2xl bg-green-500 flex items-center justify-center text-3xl text-white'>
+              <div className='w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-green-500 flex items-center justify-center text-2xl sm:text-3xl text-white'>
                 🔍
               </div>
 
-              <h3 className='font-bold text-2xl mt-5'>Find Ride</h3>
+              <h3 className='font-bold text-xl sm:text-2xl mt-4 sm:mt-5'>
+                Find Ride
+              </h3>
 
-              <p className='text-gray-500 mt-2'>Browse available rides.</p>
+              <p className='text-gray-500 mt-1.5 sm:mt-2 text-sm sm:text-base'>
+                Browse available rides.
+              </p>
             </motion.div>
 
             <motion.div
               whileHover={{ y: -8, scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => navigate("/my-ride-requests")}
-              className='cursor-pointer bg-white rounded-3xl shadow-lg p-8'
+              className='cursor-pointer bg-white rounded-2xl sm:rounded-3xl shadow-md sm:shadow-lg p-5 sm:p-8'
             >
-              <div className='w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center text-3xl text-white'>
+              <div className='w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-blue-500 flex items-center justify-center text-2xl sm:text-3xl text-white'>
                 📋
               </div>
 
-              <h3 className='font-bold text-2xl mt-5'>My Requests</h3>
+              <h3 className='font-bold text-xl sm:text-2xl mt-4 sm:mt-5'>
+                My Requests
+              </h3>
 
-              <p className='text-gray-500 mt-2'>Manage your ride requests.</p>
+              <p className='text-gray-500 mt-1.5 sm:mt-2 text-sm sm:text-base'>
+                Manage your ride requests.
+              </p>
             </motion.div>
 
             <motion.div
               whileHover={{ y: -8, scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => navigate("/ride-history")}
-              className='cursor-pointer bg-white rounded-3xl shadow-lg p-8'
+              className='cursor-pointer bg-white rounded-2xl sm:rounded-3xl shadow-md sm:shadow-lg p-5 sm:p-8'
             >
-              <div className='w-16 h-16 rounded-2xl bg-purple-500 flex items-center justify-center text-3xl text-white'>
+              <div className='w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-purple-500 flex items-center justify-center text-2xl sm:text-3xl text-white'>
                 📜
               </div>
 
-              <h3 className='font-bold text-2xl mt-5'>Ride History</h3>
+              <h3 className='font-bold text-xl sm:text-2xl mt-4 sm:mt-5'>
+                Ride History
+              </h3>
 
-              <p className='text-gray-500 mt-2'>View previous rides.</p>
+              <p className='text-gray-500 mt-1.5 sm:mt-2 text-sm sm:text-base'>
+                View previous rides.
+              </p>
             </motion.div>
           </div>
         </div>
 
         {/* Upcoming Ride + Last Ride */}
-        <div className='grid lg:grid-cols-3 gap-8 mt-10'>
+        <div className='grid lg:grid-cols-3 gap-5 sm:gap-8 mt-8 sm:mt-10'>
           {/* Upcoming Ride */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
-            className='lg:col-span-2 bg-white rounded-3xl shadow-lg p-8'
+            className='lg:col-span-2 bg-white rounded-2xl sm:rounded-3xl shadow-md sm:shadow-lg p-5 sm:p-8'
           >
-            <div className='flex justify-between items-center'>
-              <h2 className='text-2xl font-bold'>Upcoming Ride</h2>
+            <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3'>
+              <h2 className='text-xl sm:text-2xl font-bold'>Upcoming Ride</h2>
 
               {upcomingRide && (
                 <span
-                  className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusStyle(
+                  className={`self-start sm:self-auto px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold ${getStatusStyle(
                     upcomingRide.status,
                   )}`}
                 >
@@ -468,14 +490,16 @@ function RiderDashboard({ user, onLogout }) {
             </div>
 
             {requestsLoading ? (
-              <div className='py-16 text-center'>
+              <div className='py-14 sm:py-16 text-center'>
                 <div className='w-10 h-10 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto' />
 
                 <p className='text-gray-500 mt-4'>Loading upcoming ride...</p>
               </div>
             ) : requestsError ? (
-              <div className='py-12 text-center'>
-                <p className='text-red-500'>{requestsError}</p>
+              <div className='py-10 sm:py-12 text-center'>
+                <p className='text-red-500 text-sm sm:text-base'>
+                  {requestsError}
+                </p>
 
                 <button
                   onClick={loadRideRequests}
@@ -486,59 +510,61 @@ function RiderDashboard({ user, onLogout }) {
                 </button>
               </div>
             ) : !upcomingRide ? (
-              <div className='py-14 text-center'>
-                <div className='text-6xl'>🚗</div>
+              <div className='py-10 sm:py-14 text-center'>
+                <div className='text-5xl sm:text-6xl'>🚗</div>
 
-                <h3 className='text-xl font-bold mt-5'>No Upcoming Ride</h3>
+                <h3 className='text-lg sm:text-xl font-bold mt-4 sm:mt-5'>
+                  No Upcoming Ride
+                </h3>
 
-                <p className='text-gray-500 mt-2'>
+                <p className='text-gray-500 mt-2 text-sm sm:text-base'>
                   You don't have any upcoming rides.
                 </p>
 
                 <button
                   onClick={() => navigate("/create-ride")}
-                  className='mt-6 bg-yellow-400 hover:bg-yellow-500 px-6 py-3 rounded-xl font-semibold'
+                  className='mt-5 sm:mt-6 bg-yellow-400 hover:bg-yellow-500 px-5 sm:px-6 py-3 rounded-xl font-semibold'
                 >
                   Request a Ride
                 </button>
               </div>
             ) : (
-              <div className='mt-8'>
+              <div className='mt-6 sm:mt-8'>
                 {/* Pickup */}
-                <div className='flex items-start gap-4'>
-                  <div className='w-14 h-14 rounded-full bg-green-100 flex items-center justify-center'>
-                    <MapPin className='text-green-600' size={26} />
+                <div className='flex items-start gap-3 sm:gap-4'>
+                  <div className='w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-green-100 flex items-center justify-center shrink-0'>
+                    <MapPin className='text-green-600' size={22} />
                   </div>
 
-                  <div>
-                    <p className='text-gray-500'>Pickup</p>
+                  <div className='min-w-0 flex-1'>
+                    <p className='text-gray-500 text-sm'>Pickup</p>
 
-                    <h3 className='text-xl font-bold'>
+                    <h3 className='text-lg sm:text-xl font-bold break-words'>
                       {upcomingRide.pickupLocation}
                     </h3>
                   </div>
                 </div>
 
-                <div className='ml-7 h-12 border-l-2 border-dashed border-gray-300' />
+                <div className='ml-5 sm:ml-7 h-9 sm:h-12 border-l-2 border-dashed border-gray-300' />
 
                 {/* Destination */}
-                <div className='flex items-start gap-4'>
-                  <div className='w-14 h-14 rounded-full bg-red-100 flex items-center justify-center'>
-                    <MapPin className='text-red-600' size={26} />
+                <div className='flex items-start gap-3 sm:gap-4'>
+                  <div className='w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-red-100 flex items-center justify-center shrink-0'>
+                    <MapPin className='text-red-600' size={22} />
                   </div>
 
-                  <div>
-                    <p className='text-gray-500'>Destination</p>
+                  <div className='min-w-0 flex-1'>
+                    <p className='text-gray-500 text-sm'>Destination</p>
 
-                    <h3 className='text-xl font-bold'>
+                    <h3 className='text-lg sm:text-xl font-bold break-words'>
                       {upcomingRide.destination}
                     </h3>
                   </div>
                 </div>
 
                 {/* Ride Information */}
-                <div className='grid md:grid-cols-3 gap-5 mt-8'>
-                  <div className='bg-gray-50 rounded-2xl p-5'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 mt-6 sm:mt-8'>
+                  <div className='bg-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-5'>
                     <div className='flex items-center gap-2 text-gray-500'>
                       <CalendarDays size={18} />
                       <p>Date</p>
@@ -549,7 +575,7 @@ function RiderDashboard({ user, onLogout }) {
                     </h4>
                   </div>
 
-                  <div className='bg-gray-50 rounded-2xl p-5'>
+                  <div className='bg-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-5'>
                     <div className='flex items-center gap-2 text-gray-500'>
                       <Clock3 size={18} />
                       <p>Time</p>
@@ -560,7 +586,7 @@ function RiderDashboard({ user, onLogout }) {
                     </h4>
                   </div>
 
-                  <div className='bg-gray-50 rounded-2xl p-5'>
+                  <div className='bg-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-5'>
                     <div className='flex items-center gap-2 text-gray-500'>
                       <Users size={18} />
                       <p>Seats</p>
@@ -575,26 +601,28 @@ function RiderDashboard({ user, onLogout }) {
 
                 {/* Driver Details */}
                 {driver && (
-                  <div className='mt-8 bg-gray-50 rounded-2xl p-6'>
-                    <div className='flex justify-between items-center mb-5'>
+                  <div className='mt-5 sm:mt-8 bg-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-6'>
+                    <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-5'>
                       <div>
-                        <h3 className='text-xl font-bold'>Driver Details</h3>
+                        <h3 className='text-lg sm:text-xl font-bold'>
+                          Driver Details
+                        </h3>
 
-                        <p className='text-gray-500 mt-1'>
+                        <p className='text-gray-500 mt-1 text-sm'>
                           Your driver has accepted this ride.
                         </p>
                       </div>
 
-                      <div className='bg-green-100 text-green-700 px-3 py-2 rounded-full text-sm font-semibold'>
+                      <div className='self-start bg-green-100 text-green-700 px-3 py-2 rounded-full text-xs sm:text-sm font-semibold'>
                         Driver Assigned
                       </div>
                     </div>
 
-                    <div className='grid md:grid-cols-2 gap-4'>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
                       <div className='bg-white rounded-xl p-4'>
                         <p className='text-sm text-gray-500'>Driver Name</p>
 
-                        <p className='font-bold mt-1'>
+                        <p className='font-bold mt-1 break-words'>
                           {driver.full_name || driver.name || "N/A"}
                         </p>
                       </div>
@@ -605,7 +633,7 @@ function RiderDashboard({ user, onLogout }) {
                           <p className='text-sm'>Mobile</p>
                         </div>
 
-                        <p className='font-bold mt-1'>
+                        <p className='font-bold mt-1 break-words'>
                           {driver.phone || "N/A"}
                         </p>
                       </div>
@@ -624,7 +652,7 @@ function RiderDashboard({ user, onLogout }) {
                       <div className='bg-white rounded-xl p-4'>
                         <p className='text-sm text-gray-500'>Vehicle Type</p>
 
-                        <p className='font-bold mt-1'>
+                        <p className='font-bold mt-1 break-words'>
                           {driver.vehicleType || "N/A"}
                         </p>
                       </div>
@@ -632,7 +660,7 @@ function RiderDashboard({ user, onLogout }) {
                       <div className='bg-white rounded-xl p-4'>
                         <p className='text-sm text-gray-500'>Vehicle Number</p>
 
-                        <p className='font-bold mt-1'>
+                        <p className='font-bold mt-1 break-words'>
                           {driver.vehicleNumber || "N/A"}
                         </p>
                       </div>
@@ -640,15 +668,15 @@ function RiderDashboard({ user, onLogout }) {
                       <div className='bg-white rounded-xl p-4'>
                         <p className='text-sm text-gray-500'>Vehicle Model</p>
 
-                        <p className='font-bold mt-1'>
+                        <p className='font-bold mt-1 break-words'>
                           {driver.vehicleModel || "N/A"}
                         </p>
                       </div>
 
-                      <div className='bg-white rounded-xl p-4'>
+                      <div className='bg-white rounded-xl p-4 sm:col-span-2'>
                         <p className='text-sm text-gray-500'>Vehicle Color</p>
 
-                        <p className='font-bold mt-1'>
+                        <p className='font-bold mt-1 break-words'>
                           {driver.vehicleColor || "N/A"}
                         </p>
                       </div>
@@ -658,66 +686,66 @@ function RiderDashboard({ user, onLogout }) {
 
                 {/* Driver Live Location */}
                 {driver && (
-                  <div className='mt-6 bg-blue-50 border border-blue-100 rounded-2xl p-6'>
-                    <div className='flex items-center justify-between mb-5'>
+                  <div className='mt-4 sm:mt-6 bg-blue-50 border border-blue-100 rounded-xl sm:rounded-2xl p-4 sm:p-6'>
+                    <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-5'>
                       <div>
-                        <h3 className='text-xl font-bold text-gray-900'>
+                        <h3 className='text-lg sm:text-xl font-bold text-gray-900'>
                           Driver Live Location
                         </h3>
 
-                        <p className='text-gray-500 mt-1'>
+                        <p className='text-gray-500 mt-1 text-sm'>
                           Location automatically updates every 5 seconds.
                         </p>
                       </div>
 
-                      <div className='flex items-center gap-2 bg-green-100 text-green-700 px-3 py-2 rounded-full text-sm font-semibold'>
+                      <div className='self-start flex items-center gap-2 bg-green-100 text-green-700 px-3 py-2 rounded-full text-xs sm:text-sm font-semibold'>
                         <span className='w-2 h-2 bg-green-500 rounded-full animate-pulse' />
                         Live
                       </div>
                     </div>
 
                     {driverLocationLoading && !driverLocation ? (
-                      <div className='bg-white rounded-xl p-8 text-center'>
+                      <div className='bg-white rounded-xl p-7 sm:p-8 text-center'>
                         <div className='w-9 h-9 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto' />
 
-                        <p className='text-gray-500 mt-4'>
+                        <p className='text-gray-500 mt-4 text-sm sm:text-base'>
                           Getting driver location...
                         </p>
                       </div>
                     ) : driverLocation?.latitude !== undefined &&
                       driverLocation?.longitude !== undefined ? (
-                      <div className='space-y-4'>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                          <div className='bg-white rounded-xl p-5'>
+                      <div className='space-y-3 sm:space-y-4'>
+                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
+                          <div className='bg-white rounded-xl p-4 sm:p-5'>
                             <div className='flex items-center gap-2 text-gray-500'>
                               <MapPin size={18} />
                               <p className='text-sm'>Latitude</p>
                             </div>
 
-                            <p className='font-bold text-lg mt-2'>
+                            <p className='font-bold text-base sm:text-lg mt-2 break-all'>
                               {Number(driverLocation.latitude).toFixed(6)}
                             </p>
                           </div>
 
-                          <div className='bg-white rounded-xl p-5'>
+                          <div className='bg-white rounded-xl p-4 sm:p-5'>
                             <div className='flex items-center gap-2 text-gray-500'>
                               <MapPin size={18} />
                               <p className='text-sm'>Longitude</p>
                             </div>
 
-                            <p className='font-bold text-lg mt-2'>
+                            <p className='font-bold text-base sm:text-lg mt-2 break-all'>
                               {Number(driverLocation.longitude).toFixed(6)}
                             </p>
                           </div>
                         </div>
 
-                        <div className='bg-white rounded-xl p-5'>
+                        <div className='bg-white rounded-xl p-4 sm:p-5'>
                           <div className='flex items-center gap-2 text-gray-500'>
                             <Clock3 size={18} />
                             <span>Last Updated</span>
                           </div>
 
-                          <p className='font-semibold mt-2'>
+                          <p className='font-semibold mt-2 text-sm sm:text-base break-words'>
                             {driverLocation.updatedAt
                               ? new Date(
                                   driverLocation.updatedAt,
@@ -741,14 +769,14 @@ function RiderDashboard({ user, onLogout }) {
                         )}
                       </div>
                     ) : (
-                      <div className='bg-white rounded-xl p-8 text-center'>
+                      <div className='bg-white rounded-xl p-7 sm:p-8 text-center'>
                         <MapPin size={42} className='mx-auto text-gray-400' />
 
                         <h4 className='font-bold text-lg mt-3'>
                           Location Not Available
                         </h4>
 
-                        <p className='text-gray-500 mt-1'>
+                        <p className='text-gray-500 mt-1 text-sm sm:text-base'>
                           The driver has not shared a location yet.
                         </p>
 
@@ -761,14 +789,6 @@ function RiderDashboard({ user, onLogout }) {
                     )}
                   </div>
                 )}
-                {/* 
-                <button
-                  // onClick={() => navigate(`/ride-requests/${upcomingRide._id}`)}
-                  className='mt-8 bg-yellow-400 hover:bg-yellow-500 px-8 py-3 rounded-xl font-semibold transition inline-flex items-center gap-2'
-                >
-                  View Ride Details
-                  <ArrowRight size={18} />
-                </button> */}
               </div>
             )}
           </motion.div>
@@ -777,14 +797,14 @@ function RiderDashboard({ user, onLogout }) {
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            className='bg-white rounded-3xl shadow-lg p-8'
+            className='bg-white rounded-2xl sm:rounded-3xl shadow-md sm:shadow-lg p-5 sm:p-8'
           >
-            <div className='flex justify-between items-center'>
-              <h2 className='text-2xl font-bold'>Last Ride</h2>
+            <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3'>
+              <h2 className='text-xl sm:text-2xl font-bold'>Last Ride</h2>
 
               {lastRide && (
                 <span
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusStyle(
+                  className={`self-start sm:self-auto px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusStyle(
                     lastRide.status,
                   )}`}
                 >
@@ -794,55 +814,57 @@ function RiderDashboard({ user, onLogout }) {
             </div>
 
             {requestsLoading ? (
-              <div className='py-12 text-center'>
+              <div className='py-10 sm:py-12 text-center'>
                 <div className='w-9 h-9 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto' />
 
                 <p className='text-gray-500 mt-4'>Loading...</p>
               </div>
             ) : !lastRide ? (
-              <div className='py-12 text-center'>
+              <div className='py-10 sm:py-12 text-center'>
                 <div className='text-5xl'>📜</div>
 
-                <h3 className='font-bold text-xl mt-5'>No Previous Ride</h3>
+                <h3 className='font-bold text-lg sm:text-xl mt-4 sm:mt-5'>
+                  No Previous Ride
+                </h3>
 
-                <p className='text-gray-500 mt-2'>
+                <p className='text-gray-500 mt-2 text-sm sm:text-base'>
                   Your previous ride will appear here.
                 </p>
               </div>
             ) : (
-              <div className='mt-8'>
+              <div className='mt-6 sm:mt-8'>
                 <div className='flex items-start gap-3'>
-                  <div className='w-11 h-11 rounded-full bg-green-100 flex items-center justify-center'>
+                  <div className='w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-green-100 flex items-center justify-center shrink-0'>
                     <MapPin size={21} className='text-green-600' />
                   </div>
 
-                  <div className='min-w-0'>
+                  <div className='min-w-0 flex-1'>
                     <p className='text-xs text-gray-500'>Pickup</p>
 
-                    <h3 className='font-bold text-lg truncate'>
+                    <h3 className='font-bold text-base sm:text-lg break-words'>
                       {lastRide.pickupLocation}
                     </h3>
                   </div>
                 </div>
 
-                <div className='ml-5 h-8 border-l-2 border-dashed border-gray-300' />
+                <div className='ml-5 h-7 sm:h-8 border-l-2 border-dashed border-gray-300' />
 
                 <div className='flex items-start gap-3'>
-                  <div className='w-11 h-11 rounded-full bg-red-100 flex items-center justify-center'>
+                  <div className='w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-red-100 flex items-center justify-center shrink-0'>
                     <MapPin size={21} className='text-red-600' />
                   </div>
 
-                  <div className='min-w-0'>
+                  <div className='min-w-0 flex-1'>
                     <p className='text-xs text-gray-500'>Destination</p>
 
-                    <h3 className='font-bold text-lg truncate'>
+                    <h3 className='font-bold text-base sm:text-lg break-words'>
                       {lastRide.destination}
                     </h3>
                   </div>
                 </div>
 
-                <div className='grid grid-cols-2 gap-4 mt-7'>
-                  <div className='bg-gray-50 rounded-2xl p-4'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-6 sm:mt-7'>
+                  <div className='bg-gray-50 rounded-xl sm:rounded-2xl p-4'>
                     <p className='text-xs text-gray-500'>Date</p>
 
                     <p className='font-bold mt-1'>
@@ -850,7 +872,7 @@ function RiderDashboard({ user, onLogout }) {
                     </p>
                   </div>
 
-                  <div className='bg-gray-50 rounded-2xl p-4'>
+                  <div className='bg-gray-50 rounded-xl sm:rounded-2xl p-4'>
                     <p className='text-xs text-gray-500'>Time</p>
 
                     <p className='font-bold mt-1'>
@@ -859,7 +881,7 @@ function RiderDashboard({ user, onLogout }) {
                   </div>
                 </div>
 
-                <div className='bg-gray-50 rounded-2xl p-4 mt-4'>
+                <div className='bg-gray-50 rounded-xl sm:rounded-2xl p-4 mt-3 sm:mt-4'>
                   <div className='flex items-center gap-2 text-gray-500'>
                     <Users size={18} />
                     <span>Seats</span>
@@ -876,14 +898,14 @@ function RiderDashboard({ user, onLogout }) {
         </div>
 
         {/* Logout */}
-        <div className='flex justify-end mt-10'>
+        {/* <div className='flex justify-center sm:justify-end mt-7 sm:mt-10 pb-4'>
           <button
             onClick={onLogout}
-            className='bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-semibold transition'
+            className='w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-semibold transition'
           >
             Logout
           </button>
-        </div>
+        </div> */}
       </main>
     </div>
   );

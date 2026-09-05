@@ -12,7 +12,6 @@ import RegisterForm from "./components/auth/RegisterForm";
 import RiderDashboard from "./components/rider/RiderDashboard";
 import DriverDashboard from "./components/driver/DriverDashboard";
 import AdminDashboard from "./components/admin/AdminDashboard";
-
 import RiderProfile from "./pages/rider/RiderProfile";
 import EditProfile from "./pages/rider/EditProfile";
 import RideHistory from "./pages/rider/RideHistory";
@@ -22,6 +21,9 @@ import DriverDetails from "./pages/rider/DriverDetails";
 import Help from "./pages/rider/Help";
 import CreateRideRequest from "./pages/rider/CreateRideRequest";
 import MyRideRequests from "./pages/rider/MyRideRequests";
+import PendingDrivers from "./components/admin/PendingDrivers";
+import ApprovedDrivers from "./components/admin/ApprovedDrivers";
+import RejectedDrivers from "./components/admin/RejectedDrivers";
 
 import Landing from "./pages/Landing";
 
@@ -427,10 +429,7 @@ function App() {
           path='/admin/pending-drivers'
           element={
             user?.role === "admin" ? (
-              <AdminPlaceholder
-                title='Pending Drivers'
-                description='Review and approve driver registration requests.'
-              />
+              <PendingDrivers onLogout={handleLogout} />
             ) : (
               <Navigate to='/login' replace />
             )
@@ -441,10 +440,7 @@ function App() {
           path='/admin/approved-drivers'
           element={
             user?.role === "admin" ? (
-              <AdminPlaceholder
-                title='Approved Drivers'
-                description='View and manage all approved drivers.'
-              />
+              <ApprovedDrivers onLogout={handleLogout} />
             ) : (
               <Navigate to='/login' replace />
             )
@@ -455,10 +451,7 @@ function App() {
           path='/admin/rejected-drivers'
           element={
             user?.role === "admin" ? (
-              <AdminPlaceholder
-                title='Rejected Drivers'
-                description='View driver applications that were rejected.'
-              />
+              <RejectedDrivers onLogout={handleLogout} />
             ) : (
               <Navigate to='/login' replace />
             )
